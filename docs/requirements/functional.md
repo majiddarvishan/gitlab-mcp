@@ -1,27 +1,51 @@
 # Functional Requirements
 
 ## Status
-Initial draft. Items below define the intended scope and require review through the capability matrix.
+Approved scope baseline for design. Detailed tool schemas and endpoint mapping remain pending.
+
+## Project scope and authorization
+- The MCP server must operate only on projects explicitly included in a local allowlist.
+- Projects visible to the GitLab identity but absent from the allowlist must be inaccessible through every MCP tool.
+- The allowlist must be checked server-side for every project-scoped read and write operation.
+- Group membership or project visibility must not implicitly expand the allowlist.
+- The initial allowlist model is project-specific. Group-wide recursive access requires a separate decision.
 
 ## GitLab discovery and reading
-- List and inspect accessible GitLab projects.
+- List configured/allowlisted projects.
 - Read project metadata and repository tree.
 - Read files at a specified branch, tag, or commit.
-- Search repository code and text.
-- List branches and tags.
+- Search code and repository text where supported by the target GitLab instance.
+- List branches and tags, including default/protected status where available.
 - Inspect commits and compare refs.
-- Inspect merge requests, diffs, discussions, and changed files.
+- Inspect merge requests, diffs, discussions, changed files, and approval state.
 - Inspect issues, labels, milestones, and comments.
-- Inspect pipeline and job status where supported by the GitLab API and permissions.
+- Read pipeline and job metadata/status only.
 
-## GitLab mutations
-Write support is in scope from the first release. Candidate operations include:
-- Create and delete branches.
-- Create or update repository files and commits.
-- Create and update merge requests.
-- Add comments and discussions.
-- Create and update issues, labels, and milestones.
-- Trigger or retry supported pipeline/job actions only if explicitly included in the approved capability matrix.
+## Repository code changes
+- Repository code changes must be made on a dedicated working branch.
+- The MCP server must not write directly to the default branch or a protected branch.
+- A code change must be proposed through a merge request.
+- Branch creation, file changes, commits, and merge request creation/update are separate mutations and each requires its own explicit approval.
+- The merge request target branch must be explicit in the preview and approval.
+
+## Merge requests
+- MCP may create and update merge requests with explicit approval.
+- MCP may read merge request approval status and applicable merge readiness metadata.
+- MCP must not approve or unapprove a merge request.
+- MCP may merge a merge request only after a separate, explicit approval for that exact merge operation.
+- A merge approval must not be inferred from approval to create/update the MR or from approval of a commit.
+- GitLab protected-branch permissions, approval rules, CI requirements, merge checks, and instance policies remain authoritative and must not be bypassed.
+
+## CI/CD
+- The first release is read-only for CI/CD.
+- MCP may read pipeline and job metadata/status.
+- MCP must not trigger, retry, cancel, or otherwise mutate pipelines/jobs in the first release.
+- Job logs/traces and job artifacts are excluded from the first release and deferred for a separate data-handling review.
+- CI/CD variable values and secret values are out of scope.
+
+## Other GitLab mutations
+- Create/update issues and add comments/discussions where included in the final capability matrix.
+- Every mutation requires explicit user approval for that individual operation.
 
 ## Approval
 - Every mutation requires explicit user approval for that individual operation.
@@ -29,10 +53,15 @@ Write support is in scope from the first release. Candidate operations include:
 - Approval must not be reusable for a different operation or modified parameters.
 - The result must include the GitLab response and resulting object identifiers.
 
+## Compatibility
+- Target GitLab Self-Managed 18.x using REST API v4.
+- Exact minor/patch version, edition, enabled features, and effective user permissions must be checked during environment validation.
+- Unsupported features must be reported clearly and must not silently fall back to a broader operation.
+
 ## Configuration
 - Configure the GitLab base URL locally.
 - Configure credentials without committing them.
-- Support an explicit allowlist of projects or groups if selected by the user.
+- Maintain an explicit local project allowlist.
 - Provide a way to inspect effective permissions and enabled capabilities.
 
 ## Error handling
