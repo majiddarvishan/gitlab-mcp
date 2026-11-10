@@ -65,7 +65,7 @@ For every distinct numeric approver ID:
 5. Do not use `exclude_internal=true` by itself as proof of a human account: it does not exclude project/group bot users. `without_project_bots=true` alone does not establish that an account is not an internal user.
 6. If the filter is rejected, ignored, or inconsistent with the single-user response, classification fails closed; do not silently fall back to `bot=false` alone.
 
-The `username` lookup is a lookup aid only. Authorization decisions and identity comparisons must use numeric GitLab user IDs. The regular-user `GET /users/:id` representation is documented for signed-in non-admin users and includes `state`, `locked`, and `bot`.
+The `username` lookup is a lookup aid only. Authorization decisions and identity comparisons must use numeric GitLab user IDs. The regular-user `GET /users/:id` representation is documented for signed-in non-admin users and includes `state`, `locked`, and `bot`. The `humans` REST filter was added in GitLab 17.3 (Merge Request [!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200), milestone 17.3), so it predates v18.8.4-ee.
 
 ### 2.5 Apply the accepted independence rule
 
