@@ -196,22 +196,26 @@ These tasks must be completed before implementation can be considered. They are 
 - **Priority:** P0
 - **Status:** OPEN
 - **Depends on:** DES-001, SEC-001
+- **Reference:** [SEC-009 reviewer verification test protocol](../docs/security/reviewer-verification.md)
 - **Related decisions:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
 **Work**
-- Confirm the exact Free 18.8 CE/EE response from the MR approvals endpoint.
-- Verify the approved_by user IDs can be resolved through the GitLab Users API.
-- Confirm the returned user metadata identifies bot/internal accounts reliably (for example, the bot field or a supported humans filter).
-- Define how to handle missing, inaccessible, blocked, or ambiguous user records.
-- Validate the accepted rule that the qualifying human reviewer must be distinct from both the PAT owner (the MCP execution identity) and the MR author.
-- Do not infer that a GitLab approval record proves which client or interaction channel submitted it. Keep MCP merge disabled until independent reviewer identity can be established from target-instance metadata.
+- Run the protocol against the exact installed GitLab 18.8 patch and CE/EE distribution using a disposable or explicitly approved test project.
+- Resolve the PAT owner through GET /user and the MR author through the MR API; compare numeric GitLab user IDs.
+- Read approved_by from the MR approvals endpoint and resolve every candidate approver through the Users API.
+- Validate whether humans=true on GET /users is supported and reliably excludes both bot and internal accounts on this target instance. Do not treat bot=false or exclude_internal=true alone as sufficient proof.
+- Test regular human, PAT owner, MR author, project/group bot, internal user, inactive/locked user, inaccessible user, and ambiguous/missing metadata cases.
+- Verify approval freshness by re-reading the MR head SHA and approval list immediately before merge.
+- Do not infer the interaction channel from an approval record; GitLab account metadata does not prove whether approval was submitted through UI or API.
+- Keep MCP merge disabled unless every required identity check is reliable and all negative cases fail closed.
 
 **Acceptance criteria**
-- At least one qualifying human approver can be distinguished from bot/internal users, the PAT owner, and the MR author.
-- The behavior is verified against the exact target patch and CE/EE distribution.
-- If a qualifying human reviewer cannot be verified, merge is denied.
-- The rule and evidence are documented without publishing user IDs, usernames, or internal URLs.
-
+- The exact target patch and CE/EE distribution are recorded in sanitized form.
+- At least one qualifying regular human approver can be distinguished from bots/internal users and is numerically distinct from both PAT owner and MR author.
+- The human-account classification method is verified on the target instance; unsupported filters or incomplete metadata fail closed.
+- Missing, inaccessible, inactive, ambiguous, stale, or changed approval state blocks merge.
+- Sanitized evidence is recorded without publishing user IDs, usernames, project identifiers, internal URLs, or credentials.
+- SEC-009 remains OPEN until target-instance evidence is reviewed; defining this protocol alone does not complete the test.
 ## SEC-001 — Select the GitLab authentication and identity model
 
 - **Priority:** P0
@@ -247,7 +251,7 @@ These tasks must be completed before implementation can be considered. They are 
 - **Reference:** [Authentication model](../docs/security/authentication-model.md)
 
 **Work**
-- On a disposable test setup, identify one project accessible to the PAT owner that is explicitly allowlisted and one project accessible to the same user that is not allowlisted.
+- On a disposable test setup, identify one project accessible to the PAT owner that is explicitly allowlisted and one project accessible to the same user that is not allowlisted. This validates the selected personal PAT; do not describe or test it as project-scoped.
 - Verify that MCP can perform permitted reads/writes on the allowlisted project subject to the user's GitLab role and operation approval.
 - Verify that MCP rejects reads and writes to the accessible-but-unlisted project before returning project data or issuing a mutation.
 - Test nested resources, cross-project references, alternate project paths/aliases, and renamed/ambiguous project resolution.
@@ -869,18 +873,19 @@ These tasks must be completed before implementation can be considered. They are 
 
 # Current next-action queue
 
-The next tasks to work through, in order, are:
+The next design and validation tasks, in order, are:
 
-1. **DES-001** — Obtain exact 18.8 patch and CE/EE distribution; Free tier and 18.8 minor are confirmed.
-2. **SEC-009** — Verify that GitLab Free 18.8 exposes enough metadata to distinguish a human MR approver from bot/internal accounts.
-3. **SEC-001** — Decide between per-project Project Access Tokens, a dedicated user PAT, or OAuth, including the token role required for protected-branch merge.
-4. **SEC-010 / SEC-011** — Validate Project Access Token isolation and Developer/Maintainer permissions on a test project.
-5. **SEC-002 / SEC-003** — Finalize secure token storage and local project allowlist administration.
-6. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and its server-side enforcement.
-7. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
-8. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
-9. **DES-010** — Record GitLab 18.8 upgrade plan or explicit risk acceptance.
-10. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
+1. **DES-001** — Confirm the exact GitLab 18.8 patch and CE/EE distribution.
+2. **SEC-009** — Validate independent human reviewer classification on the exact target instance using the [SEC-009 test protocol](../docs/security/reviewer-verification.md). Merge remains disabled until this passes.
+3. **SEC-010 / SEC-011** — Validate the selected personal PAT's allowlist boundary and the user's actual per-project permissions. These are not Project Access Token tests.
+4. **SEC-002 / SEC-003** — Finalize OS-native PAT storage and local canonical project allowlist administration.
+5. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and server-side enforcement.
+6. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+7. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
+8. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
+9. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
+
+**SEC-001 is DONE:** the user selected a Personal Access Token (PAT) belonging to their existing human GitLab account; see ADR-0015.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
 
