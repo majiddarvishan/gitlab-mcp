@@ -193,12 +193,12 @@ These tasks must be completed before implementation can be considered. They are 
 
 - **Priority:** P0
 - **Status:** OPEN
-- **Depends on:** SEC-001 (DES-001 complete)
+- **Depends on:** SEC-001, SEC-002 (secure PAT provisioning must be complete; DES-001 is DONE)
 - **Reference:** [SEC-009 reviewer verification test protocol](../docs/security/reviewer-verification.md); [target-instance validation runbook](../docs/environment/validation-runbook.md)
 - **Related decisions:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
 **Work**
-- Run the protocol against the exact installed GitLab 18.8 patch and CE/EE distribution using a disposable or explicitly approved test project.
+- Run the protocol against the exact installed GitLab EE v18.8.4-ee instance with Free subscription using a disposable or explicitly approved test project. Do not provision the PAT until SEC-002 is DONE.
 - Resolve the PAT owner through GET /user and the MR author through the MR API; compare numeric GitLab user IDs.
 - Read approved_by from the MR approvals endpoint and resolve every candidate approver through the Users API.
 - Use regular-user `GET /users/:id` (no admin role required) to verify exact numeric ID, `bot=false`, `state=active`, and `locked=false`. The `humans=true` filter in `GET /users?username=:username&humans=true&active=true` was added in GitLab 17.3 ([!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200)); verify exact-ID matching and exclusion of bot/internal accounts on the target instance. Do not treat `bot=false` or `exclude_internal=true` alone as sufficient proof.
