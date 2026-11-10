@@ -38,7 +38,14 @@ The MCP server must independently enforce the accepted canonical project allowli
 
 ADR-0014 remains in force: MCP merge requires both a verified human GitLab approval and a separate, exact-operation MCP user approval. MCP must not expose approve, unapprove, or reset-approval operations.
 
-A GitLab approval record identifies an account; it does not, by itself, prove whether the approval was entered through the GitLab UI or by an API client. Because MCP uses the PAT owner's human identity, the design should require the qualifying independent GitLab reviewer to be a regular human account distinct from both the PAT owner and the MR author. This additional identity-separation rule is a security proposal pending validation in SEC-009 and explicit confirmation; until it is resolved, MCP merge remains unavailable. Bot/internal accounts and ambiguous identities must never satisfy the human-review gate.
+A GitLab approval record identifies an account; it does not, by itself, prove whether the approval was entered through the GitLab UI or by an API client. The user explicitly accepted the following reviewer-independence rule:
+
+- The qualifying reviewer must be a regular human account.
+- The reviewer must be different from the PAT owner (the MCP execution identity).
+- The reviewer must be different from the MR author.
+- Bot/internal accounts and missing, stale, inaccessible, or ambiguous identities never satisfy the human-review gate.
+
+SEC-009 must validate that the target GitLab Free 18.8 CE/EE API exposes enough identity metadata to enforce this rule. Until that validation is complete and the implementation can fail closed, MCP merge remains unavailable.
 
 ## Alternatives considered
 
