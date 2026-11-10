@@ -17,7 +17,8 @@ This file is the central task register for the project. Tasks are grouped by del
   
 ### Status
 - **OPEN:** planned and not yet completed.
-- **BLOCKED:** cannot start until a stated dependency or approval is satisfied.
+- **BLOCKED:** cannot start until a stated dependency, external input, or approval is satisfied.
+- **DONE:** acceptance criteria satisfied and evidence recorded.
 - **DEFERRED:** intentionally outside the first release.
   
 ### Task completion
@@ -32,43 +33,58 @@ These tasks must be completed before implementation can be considered. They are 
 ## DES-001 — Identify the exact GitLab 18.x environment
 
 - **Priority:** P0
-- **Status:** OPEN
-- **Depends on:** None
+- **Status:** BLOCKED
+- **Depends on:** User-provided version/edition string
 - **Owner:** User provides instance facts; project records sanitized result
+- **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
 
 **Work**
 - Determine exact GitLab version (18.x minor and patch).
 - Determine edition/tier and relevant feature availability.
-- Record only non-sensitive environment facts; do not publish internal URL, hostname, IP, project names, or user identifiers.
+- Use GitLab's authenticated **Help > Help** page; the version string is displayed at the top.
+- Record only the edition/version string; do not publish the internal URL, hostname, IP, project names, user identifiers, or credentials.
 
 **Acceptance criteria**
-- A sanitized environment profile records version, edition, and relevant feature flags/limitations.
+- A sanitized environment profile records exact version and edition.
 - The profile contains no private network identifiers or credentials.
 - Any capability unavailable in the target instance is marked unsupported or conditional in the capability matrix.
+
+**Unblock requirement**
+- Provide only the version/edition text shown at the top of the GitLab Help page, for example `GitLab Enterprise Edition 18.x.y`. Do not provide the page URL or hostname.
 
 ## DES-002 — Verify ChatGPT Desktop and Codex local MCP compatibility
 
 - **Priority:** P0
-- **Status:** OPEN
+- **Status:** DONE
 - **Depends on:** None
 - **Owner:** Project research
+- **Evidence:** [Client compatibility research](../docs/architecture/client-compatibility.md)
+- **Completion scope:** Official-documentation review only; target-workstation smoke testing remains TST-009.
 
 **Work**
-- Verify current official support for local MCP servers in ChatGPT Desktop Chat mode.
+- Verify current official support for local MCP servers in the new ChatGPT Desktop app.
 - Verify current Codex support and configuration for the same local server.
 - Identify host-specific differences in tool discovery, approval prompts, transport, lifecycle, and configuration.
-- Define Codex as the fallback only where Chat mode cannot satisfy a required capability.
+- Distinguish local desktop MCP from ChatGPT web remote MCP.
 
 **Acceptance criteria**
 - A client compatibility matrix cites current official documentation.
 - The design identifies which client supports local MCP, in which mode, and with which limitations.
 - No assumption is made that ChatGPT web custom MCP and local desktop MCP are equivalent.
 
+**Verified findings (2026-11-10)**
+- The new ChatGPT desktop app, Codex CLI, and Codex IDE extension support MCP and share MCP configuration for the same Codex host.
+- ChatGPT desktop settings include **MCP servers**, with STDIO and Streamable HTTP options.
+- The desktop composer can display connected MCP servers via `/mcp`.
+- Codex configuration supports server-level and per-tool approval modes; `writes` prompts for tools not marked read-only.
+- Local desktop/Codex MCP configuration is not read by ChatGPT web.
+- Linux desktop preview availability is limited to the distributions documented by OpenAI; target-workstation OS confirmation and runtime smoke test remain pending.
+
 ## DES-003 — Decide the implementation language
 
 - **Priority:** P0
 - **Status:** OPEN
-- **Depends on:** DES-002
+- **Depends on:** DES-002 (complete)
 - **Related ADR:** ADR-0004
 
 **Work**
@@ -84,7 +100,7 @@ These tasks must be completed before implementation can be considered. They are 
 
 - **Priority:** P0
 - **Status:** OPEN
-- **Depends on:** DES-002
+- **Depends on:** DES-002 (complete)
 - **Related ADR:** ADR-0005
 
 **Work**
@@ -101,7 +117,7 @@ These tasks must be completed before implementation can be considered. They are 
 
 - **Priority:** P0
 - **Status:** BLOCKED
-- **Depends on:** DES-002, DES-003, DES-004
+- **Depends on:** DES-003, DES-004
 - **Related ADRs:** ADR-0004, ADR-0005
 
 **Work**
@@ -761,12 +777,12 @@ These tasks define the security boundary before code is authorized.
 
 The next tasks to work through, in order, are:
 
-1. **DES-001** — Record the exact GitLab 18.x minor/patch and edition.
-2. **DES-002** — Verify local MCP compatibility in ChatGPT Desktop Chat mode and Codex.
-3. **DES-003 / DES-004** — Accept or revise Go and STDIO after compatibility verification.
-4. **SEC-001** — Decide the GitLab identity and credential type.
-5. **SEC-002 / SEC-003** — Decide secure token storage and allowlist administration.
-6. **SEC-004 / SEC-005** — Finalize the user approval mechanism and its enforcement.
-7. **DES-006 / DES-007 / DES-008** — Freeze the first-release tool list, contracts, and GitLab API mapping.
+1. **DES-001** — User provides the sanitized GitLab edition/version string; the profile and retrieval instructions are ready.
+2. **DES-003 / DES-004** — Decide Go and STDIO. Official documentation confirms that local STDIO MCP is supported by the new ChatGPT desktop app and Codex host.
+3. **SEC-001** — Decide the GitLab identity and credential type.
+4. **SEC-002 / SEC-003** — Decide secure token storage and allowlist administration.
+5. **SEC-004 / SEC-005** — Finalize the user approval mechanism and its enforcement.
+6. **DES-006 / DES-007 / DES-008** — Freeze the first-release tool list, contracts, and GitLab API mapping.
+7. **TST-009** — Run the client smoke test on the target workstation after a harmless test server is available; this is not implementation authorization.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
