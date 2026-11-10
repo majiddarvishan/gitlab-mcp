@@ -30,7 +30,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Validate PAT reach against the MCP project allowlist (SEC-010).
 - [ ] Validate the user's actual per-project permissions, including protected-branch merge (SEC-011).
 - [ ] Validate PAT expiry and rotation behavior (SEC-012).
-- [ ] Define configuration and credential storage.
+- [ ] Accept and validate [local Secret Service credential storage](../docs/security/credential-storage.md) (SEC-002 / ADR-0016).
 - [ ] Define approval lifecycle, merge preflight checks, and failure behavior.
 - [x] Confirm GitLab Free tier and 18.8 minor version.
 - [x] Confirm exact GitLab build: Enterprise Edition v18.8.4-ee with Free subscription tier (DES-001).
