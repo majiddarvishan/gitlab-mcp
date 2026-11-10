@@ -29,7 +29,7 @@ The project is documentation-first. No implementation is approved until the requ
 | Area | Decision |
 |---|---|
 | Git provider | GitLab Self-Managed |
-| Target version | 18.x; exact minor/patch and edition to be confirmed |
+| Target version | GitLab Free 18.8; exact patch and CE/EE distribution pending |
 | Network | Private/internal; workstation already has access |
 | MCP location | Local workstation |
 | Clients | ChatGPT Desktop first; Codex is an acceptable fallback |
@@ -40,6 +40,14 @@ The project is documentation-first. No implementation is approved until the requ
 | CI/CD | Read pipeline/job metadata and status only |
 | Job logs/artifacts | Deferred, excluded from first release |
 | Write safety | Explicit approval for every mutation |
+
+## GitLab Free 18.8 constraints
+
+- Basic code search is limited to a project; advanced/exact and global/group code search are not part of the Free-tier baseline.
+- MR approvals are optional on Free; required approval rules are not included. An additional MCP-side human-approval gate before merge is still proposed and awaits user decision.
+- Job logs and artifacts remain excluded from the first release.
+
+GitLab 18.8 is outside the maintained release lines listed by GitLab as of 2026-11-10. Production use should be accompanied by an upgrade plan or explicit risk acceptance.
 
 ## Proposed technical choices
 
