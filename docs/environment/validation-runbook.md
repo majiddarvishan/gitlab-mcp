@@ -164,3 +164,17 @@ Do not include IDs, usernames, project identifiers, internal URLs, request heade
 - **SEC-011** is DONE only after actual per-project permissions and protected-branch behavior are recorded.
 - **SEC-012** is DONE only after target expiry policy and secure token lifecycle are validated.
 - Defining this runbook does not complete any target-instance validation task and does not authorize implementation.
+
+## 9. Local Secret Service preflight (SEC-002)
+
+No GitLab PAT exists yet. Before requesting one, complete the [non-secret workstation preflight](../security/credential-storage.md#3-non-secret-workstation-preflight) in the same Linux desktop session that will launch MCP.
+
+The preflight checks the user-session Secret Service D-Bus provider, the default collection alias, and a disposable canary value. It must pass store, lookup, and clear operations. Do not use a real PAT as a test value.
+
+SEC-002 remains OPEN until:
+- The user confirms that the target MCP runtime is the same Linux desktop session.
+- The storage proposal ADR-0016 is accepted.
+- The canary test passes and the provider's lock/unlock behavior is understood.
+- The runtime failure behavior is agreed: missing/locked/unavailable/ambiguous secret => fail closed, with no plaintext/environment/model-input fallback.
+
+Do not create a PAT before SEC-002 is DONE.
