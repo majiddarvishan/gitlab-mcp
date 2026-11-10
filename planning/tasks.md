@@ -287,7 +287,7 @@ These tasks must be completed before implementation can be considered. They are 
 ## SEC-002 — Define local secret storage and credential lifecycle
 
 - **Priority:** P0
-- **Status:** OPEN (storage proposal drafted; user acceptance and workstation preflight pending)
+- **Status:** OPEN (desktop execution context confirmed; ADR acceptance and workstation preflight pending)
 - **Depends on:** SEC-001
 - **Reference:** [Local Credential Storage Design](../docs/security/credential-storage.md)
 - **Related ADR:** [ADR-0016 — Proposed](../docs/decisions/0016-linux-secret-service-credential-storage.md)
@@ -300,8 +300,11 @@ These tasks must be completed before implementation can be considered. They are 
 - No plaintext file, environment variable, command-line, AI-chat, or STDIO-input fallback is permitted.
 - Headless SSH/cron/system-service operation is outside this initial proposal.
 
-**Work**
-- Confirm that MCP runs on the same Linux desktop session covered by ADR-0016, or select a different platform/backend.
+**Confirmed environment fact (2026-11-10)**
+- The user confirmed that MCP will run on the same Linux desktop and under the same account logged into the graphical session. The proposed Linux Secret Service backend is therefore applicable to the intended deployment context.
+- This confirmation does not accept ADR-0016, complete SEC-002, authorize implementation, or permit PAT creation.
+
+**Remaining work**
 - Verify the Secret Service provider and the default collection alias on the workstation.
 - Use a disposable non-secret canary value to test store, lookup, lock/unlock, ambiguity, and delete behavior.
 - Define the setup procedure for a real PAT only after the storage path is accepted and verified.
