@@ -27,3 +27,4 @@ An ADR records context, options, the decision, and consequences. Do not rewrite 
 | [0011](0011-human-only-merge-request-approval.md) | Human-only merge request approval | Accepted |
 | [0012](0012-read-only-ci-and-deferred-logs.md) | Read-only CI/CD and deferred logs/artifacts | Accepted |
 | [0013](0013-gitlab-18x-compatibility.md) | GitLab Self-Managed 18.x compatibility target | Accepted |
+| [0014](0014-free-tier-human-approval-merge-gate.md) | Free-tier human approval requirement before MCP merge | Proposed |
