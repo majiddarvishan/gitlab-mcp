@@ -55,7 +55,7 @@ The remaining API behavior checks must still be run against the actual instance,
 - The MR approval-state API is available on Free. Because this target is EE, GitLab documents that the approval-state endpoint returns the full EE response schema even without a paid license. That includes attributes such as `approved_by`, `approvals_required`, `approvals_left`, approval-rule metadata, `state`, and `merge_status`; the exact response must still be captured on v18.8.4-ee.
 - On EE, `approved=true` means the configured approval rules are satisfied. When no approval rules apply, GitLab can return `approved=true` even when `approved_by` is empty. Therefore `approved` is not evidence that a human reviewer exists; the MCP gate must inspect and classify `approved_by`.
 - The separate `GET .../approval_state` endpoint that retrieves approval details/rules remains Premium/Ultimate. The EE response schema for `GET .../approvals` does not make that separate endpoint available on the Free license.
-- The Users API currently documents `GET /users?username=:username&humans=true` to select regular users who are neither bot nor internal users. The docs do not identify the version in which `humans` was introduced; support must be tested on the exact 18.8.4-ee instance before relying on it.
+- The REST Users API `humans=true` filter selects regular users that are neither bot nor internal users. It was added in GitLab 17.3 (Merge Request [!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200)), before the v18.8.4-ee target. Runtime behavior and visibility must still be checked on the actual instance.
 - If the product must require at least one human approval before MCP performs a merge, that must be an explicit MCP-side policy; it is not enforced by the Free tier itself.
 
 ## Version maintenance and security note
@@ -88,6 +88,7 @@ This does not prevent designing or testing MCP compatibility with 18.8. However,
 - [Merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
 - [Merge request approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [Users API](https://docs.gitlab.com/api/users/)
+- [GitLab !159200 — REST human-user filter added in milestone 17.3](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200)
 - [Internal users](https://docs.gitlab.com/administration/internal_users/)
 - [Personal access tokens](https://docs.gitlab.com/user/profile/personal_access_tokens/)
 - [Exact GitLab v18.8.4-ee tag](https://gitlab.com/gitlab-org/gitlab/-/tags/v18.8.4-ee)
