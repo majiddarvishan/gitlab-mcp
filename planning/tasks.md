@@ -33,24 +33,29 @@ These tasks must be completed before implementation can be considered. They are 
 ## DES-001 — Identify the exact GitLab 18.x environment
 
 - **Priority:** P0
-- **Status:** BLOCKED
-- **Depends on:** User-provided version/edition string
+- **Status:** BLOCKED (partially confirmed)
+- **Depends on:** Exact patch and CE/EE distribution string
 - **Owner:** User provides instance facts; project records sanitized result
 - **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
 
+**Confirmed**
+- Self-Managed, GitLab Free tier, version 18.8.
+
+**Still required**
+- Exact patch version (for example, 18.8.0 or 18.8.6).
+- CE or EE distribution, because some API response fields can differ.
+
 **Work**
-- Determine exact GitLab version (18.x minor and patch).
-- Determine edition/tier and relevant feature availability.
-- Use GitLab's authenticated **Help > Help** page; the version string is displayed at the top.
-- Record only the edition/version string; do not publish the internal URL, hostname, IP, project names, user identifiers, or credentials.
+- Use GitLab's authenticated **Help > Help** page; read the version/distribution string at the top.
+- Record only the version/distribution text; do not publish internal URL, hostname, IP, project names, user identifiers, or credentials.
 
 **Acceptance criteria**
-- A sanitized environment profile records exact version and edition.
+- A sanitized environment profile records exact patch and distribution.
 - The profile contains no private network identifiers or credentials.
 - Any capability unavailable in the target instance is marked unsupported or conditional in the capability matrix.
 
 **Unblock requirement**
-- Provide only the version/edition text shown at the top of the GitLab Help page, for example `GitLab Enterprise Edition 18.x.y`. Do not provide the page URL or hostname.
+- Provide only the version/distribution line, for example `GitLab Enterprise Edition 18.8.6`. Do not provide the page URL or hostname.
 
 ## DES-002 — Verify ChatGPT Desktop and Codex local MCP compatibility
 
@@ -280,8 +285,8 @@ These tasks define the security boundary before code is authorized.
 ## SEC-006 — Specify merge preflight and merge safety
 
 - **Priority:** P0
-- **Status:** OPEN
-- **Depends on:** SEC-004, DES-008
+- **Status:** BLOCKED
+- **Depends on:** SEC-004, DES-008, DES-011
 
 **Work**
 - Define the fields shown before merge approval: project, MR IID, source/target refs, current source HEAD SHA, merge method/options, readiness, approvals, and pipeline state.
@@ -777,12 +782,67 @@ These tasks define the security boundary before code is authorized.
 
 The next tasks to work through, in order, are:
 
-1. **DES-001** — User provides the sanitized GitLab edition/version string; the profile and retrieval instructions are ready.
-2. **DES-003 / DES-004** — Decide Go and STDIO. Official documentation confirms that local STDIO MCP is supported by the new ChatGPT desktop app and Codex host.
-3. **SEC-001** — Decide the GitLab identity and credential type.
-4. **SEC-002 / SEC-003** — Decide secure token storage and allowlist administration.
-5. **SEC-004 / SEC-005** — Finalize the user approval mechanism and its enforcement.
-6. **DES-006 / DES-007 / DES-008** — Freeze the first-release tool list, contracts, and GitLab API mapping.
-7. **TST-009** — Run the client smoke test on the target workstation after a harmless test server is available; this is not implementation authorization.
+1. **DES-001** — Obtain exact 18.8 patch and CE/EE distribution; Free tier and 18.8 minor are confirmed.
+2. **DES-011** — Decide whether MCP must enforce at least one human MR approval before merging.
+3. **SEC-001 / SEC-002** — Decide GitLab identity, token type, and secure local credential storage.
+4. **SEC-003** — Finalize local project allowlist format and administration.
+5. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and its server-side enforcement.
+6. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+7. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
+8. **DES-010** — Record GitLab 18.8 upgrade plan or explicit risk acceptance.
+9. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
+
+
+## DES-009 — Validate Free-tier project code search
+
+- **Priority:** P0
+- **Status:** OPEN
+- **Depends on:** DES-001 (partially confirmed), DES-008
+- **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
+
+**Work**
+- Verify that project-scoped basic code search is available through the GitLab 18.8 Free instance's REST API.
+- Confirm supported search modes, branches/refs, filters, pagination, and result shape.
+- Keep group/global advanced and exact code search out of scope for Free.
+- If the API behavior is insufficient, compare targeted file retrieval, repository archive, and local Git clone/index as alternatives. Do not choose a fallback without documenting storage, freshness, and data-exposure implications.
+
+**Acceptance criteria**
+- A tested endpoint and request shape are documented for project-level basic code search, or the capability is marked unavailable.
+- Search results remain scoped to one allowlisted project.
+- The final search strategy does not depend on Premium/Ultimate, Elasticsearch, Zoekt, or GitLab Duo.
+
+## DES-010 — Review GitLab 18.8 maintenance and upgrade plan
+
+- **Priority:** P0
+- **Status:** OPEN
+- **Depends on:** DES-001
+- **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
+
+**Work**
+- Confirm the exact installed patch.
+- Compare the installed release with GitLab's current maintained release lines and patch policy.
+- Ask the responsible GitLab administrator to confirm the planned upgrade path or document the organization's accepted risk.
+- Do not change the MCP compatibility target without an explicit user decision.
+
+**Acceptance criteria**
+- The backlog records whether an upgrade is planned, the responsible owner/role, and a target window, or records an explicit risk acceptance.
+- No private hostname or operational detail is published.
+- The MCP can continue to target 18.8 for compatibility testing while release readiness tracks the maintenance risk separately.
+
+## DES-011 — Decide whether MCP must require human MR approval before merge
+
+- **Priority:** P0
+- **Status:** OPEN
+- **Depends on:** ADR-0014 (Proposed)
+- **Reference:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md)
+
+**Work**
+- Decide whether separate MCP merge approval is sufficient, or whether at least one human MR approval in GitLab must also be present.
+- If requiring human approval, validate whether the Free-tier API and deployed CE/EE distribution can identify an eligible human approver reliably.
+- Keep MCP approval to merge distinct from GitLab's human code-review approval.
+
+**Acceptance criteria**
+- ADR-0014 is Accepted, Rejected, or Superseded based on an explicit user decision.
+- Merge preflight and tests reflect the selected policy.
