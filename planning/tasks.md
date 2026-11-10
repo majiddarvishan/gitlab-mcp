@@ -903,21 +903,21 @@ These tasks must be completed before implementation can be considered. They are 
 
 The exact GitLab build is confirmed and **DES-001 is DONE**. The next design and validation tasks are:
 
-1. **SEC-002** — Review ADR-0016 and validate the Linux Secret Service path with a non-secret canary. No PAT creation until this is DONE.
-2. **SEC-009** — After SEC-002 is DONE and a PAT is safely provisioned, run the [reviewer verification protocol](../docs/security/reviewer-verification.md) against EE v18.8.4-ee. MCP merge stays disabled until this passes.
-3. **SEC-003** — Finalize local canonical project allowlist administration.
-4. **SEC-004 / SEC-005** — Finalize trustworthy user approval interaction and server-side approval binding.
-5. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
-6. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and project-level Free code-search behavior.
-7. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
-8. **SEC-012** — Validate PAT expiry and rotation after the storage lifecycle is defined.
-9. **SEC-010 / SEC-011** — Integration-test the personal PAT allowlist boundary and actual per-project permissions after implementation is explicitly authorized.
-10. **TST-009** — Run the local client smoke test after an implementation candidate exists.
+1. **DES-012** — Evaluate existing GitLab MCP implementations against this project's accepted security requirements. No upstream candidate is selected or adopted yet.
+2. **SEC-002** — Review ADR-0016 and validate the Linux Secret Service path with a non-secret canary. No PAT creation until this is DONE; candidate-specific credential integration must also be considered.
+3. **SEC-009** — After SEC-002 is DONE and a PAT is safely provisioned, run the [reviewer verification protocol](../docs/security/reviewer-verification.md) against EE v18.8.4-ee. MCP merge stays disabled until this passes.
+4. **SEC-003** — Finalize local canonical project allowlist administration.
+5. **SEC-004 / SEC-005** — Finalize trustworthy user approval interaction and server-side approval binding.
+6. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+7. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and project-level Free code-search behavior.
+8. **DES-010** — Record the GitLab 18.8 maintenance and upgrade plan or explicit risk acceptance.
+9. **SEC-012** — Validate PAT expiry and rotation after the storage lifecycle is defined.
+10. **SEC-010 / SEC-011** — Integration-test the personal PAT allowlist boundary and actual per-project permissions after implementation is explicitly authorized.
+11. **TST-009** — Run the local client smoke test after an implementation candidate exists.
 
 **SEC-001 is DONE:** the user selected a Personal Access Token belonging to their existing human GitLab account; see ADR-0015.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
-
 
 ## DES-009 — Validate Free-tier project code search
 
@@ -973,3 +973,32 @@ No implementation task is authorized by this backlog. Implementation remains blo
 
 **Follow-up technical validation**
 - Verify that the deployed Free 18.8 CE/EE distribution exposes enough user metadata to identify bot/internal accounts. Tracked separately by SEC-009.
+
+
+## DES-012 — Evaluate existing GitLab MCP implementations
+
+- **Priority:** P0
+- **Status:** OPEN
+- **Depends on:** DES-001 (DONE), user authorization to evaluate existing products (received)
+- **Reference:** [Existing GitLab MCP implementation evaluation](../docs/research/existing-gitlab-mcp-evaluation.md)
+- **Decision status:** No upstream project has been selected, forked, adopted, or authorized for code changes.
+
+**Work**
+- Compare GitLab's built-in MCP server with independent open-source implementations, initially including [zereight/gitlab-mcp](https://github.com/zereight/gitlab-mcp) and [jmrplens/gitlab-mcp-server](https://github.com/jmrplens/gitlab-mcp-server).
+- Pin each reviewed upstream snapshot to an exact commit SHA and record the review date.
+- Verify support for GitLab Self-Managed EE v18.8.4-ee with the Free subscription tier; distinguish API compatibility from GitLab license-tier availability.
+- Inspect the actual source paths for credential loading, tool registration, read/write policy, merge and approval operations, project-scope enforcement, raw REST/GraphQL escape hatches, download routes, error handling, and logging.
+- Test whether every project-scoped read/write path is bound to canonical allowlisted project IDs, including nested resources, cross-project parameters, GraphQL, search, pagination, and downloads.
+- Reject any design where a model-supplied boolean/parameter (for example `confirm=true` or `_confirmed=true`) is treated as independent user approval.
+- Verify that Merge Request approval is read-only in MCP and that merge cannot occur without both the independent GitLab human approval required by ADR-0014 and a separate, exact-operation, single-use MCP user approval enforced server-side.
+- Assess whether the selected implementation can retrieve the PAT directly from Linux Secret Service in the same desktop D-Bus session without passing it through environment variables, process arguments, plaintext files, logs, or model-visible content.
+- Compare Go/TypeScript ecosystem fit, project size and capability surface, dependency and supply-chain posture, test quality, maintenance cadence, license, upgrade strategy, and the cost/risk of hardening.
+- Produce a recommendation: adopt upstream unchanged, fork and harden, build a narrow adapter around it, or retain a small custom implementation.
+
+**Acceptance criteria**
+- Each candidate has a pinned source snapshot and a documented feature/security assessment.
+- No candidate is accepted unless all mandatory project-scope, approval, merge, credential, and target-version requirements are either demonstrably enforced or have an explicit, bounded hardening plan.
+- Any raw API/GraphQL path that can bypass project scope or operation policy is disabled or removed in the proposed configuration/design.
+- The selected path preserves ADR-0014 and ADR-0015; no MCP approval/unapproval of human reviews is introduced.
+- The recommendation records rejected options, residual risks, and any change needed to Proposed ADR-0004 (Go language).
+- This task is documentation and source review only. It does not authorize a fork, dependency import, implementation, PAT creation, or deployment.
