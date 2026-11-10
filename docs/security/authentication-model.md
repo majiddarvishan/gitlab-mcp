@@ -95,9 +95,11 @@ The allowlist limits what the MCP application will do; it does not make a leaked
 
 ## Local credential handling
 
+The proposed initial Linux backend is the Secret Service D-Bus API in the user's interactive desktop login session; see [Local Credential Storage Design](credential-storage.md) and [ADR-0016 (Proposed)](../decisions/0016-linux-secret-service-credential-storage.md). This proposal is not accepted yet, and no PAT may be created until SEC-002 is DONE.
+
 - Store the PAT in an OS-native secret store where practical.
-- Keep the token out of source control, ordinary configuration files, command-line arguments, environment dumps, MCP tool arguments, model-visible output, crash reports, and logs.
-- Only the local MCP process should retrieve the PAT and attach it to GitLab requests.
+- Keep the token out of source control, ordinary configuration files, command-line arguments, environment dumps, MCP tool arguments, model-visible output, crash reports, and logs. Secret Service lookup attributes are not secret material; use generic labels and never place private hostnames or usernames in them.
+- Only the local MCP process should retrieve the PAT and attach it to GitLab requests. On the proposed Linux backend, retrieve it directly through Secret Service D-Bus as the normal desktop user; no runtime child process, environment variable, or plaintext fallback is permitted.
 - Never provide the token to the AI client or model as a tool input or tool result.
 - Use an expiration date and document renewal, rotation, and immediate revocation.
 - Keep a sanitized credential record containing only token type, owner alias, scope, expiry, and status; never record the token value.
