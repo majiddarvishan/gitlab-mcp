@@ -34,7 +34,7 @@ The required target-instance validation procedure is defined in [SEC-009 reviewe
 The first-release implementation must:
 - Read the GitLab Free-compatible approval state through `GET /projects/:id/merge_requests/:merge_request_iid/approvals`.
 - Inspect the `approved_by` list; do not rely only on the boolean `approved`, because its semantics and available response fields differ by CE/EE distribution.
-- Resolve each candidate approver through the GitLab Users API and verify the account is a regular human account (for example, `bot=false` on `GET /users/:id` or an equivalent supported human-user filter).
+- Resolve each candidate approver through the regular-user Users API. Cross-check `GET /users/:id` (`id`, `bot`, and `state`) and `GET /users?username=:username&humans=true&active=true`; require the exact candidate numeric ID to appear in the human-filtered result. `bot=false` alone is not sufficient to exclude internal users. Validate the filter on the exact 18.8 patch because current documentation does not state its introduction version.
 - Reject bot/internal accounts and fail closed if the approver identity cannot be reliably classified.
 - Exclude the MCP PAT owner and the MR author from qualifying approvers, even when either account is otherwise classified as human.
 - Require at least one verified human approval from a qualifying independent reviewer. A missing, empty, unavailable, or ambiguous approval record is not sufficient.
@@ -95,4 +95,5 @@ GitLab remains authoritative for user permissions, protected branch rules, CI re
 - [GitLab merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
 - [GitLab merge request approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [GitLab Users API](https://docs.gitlab.com/api/users/)
+- [GitLab internal users](https://docs.gitlab.com/administration/internal_users/)
 - [GitLab merge request approval settings](https://docs.gitlab.com/user/project/merge_requests/approvals/settings/)
