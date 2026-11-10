@@ -51,8 +51,8 @@ The target is GitLab Self-Managed 18.x using REST API v4. The exact minor/patch 
 
 ## Open design points
 
-- Exact ChatGPT Desktop Chat-mode support for local MCP tools.
-- Exact Codex configuration and approval interaction.
+- Runtime smoke test of local MCP in the target ChatGPT Desktop Chat and Codex environments; official documentation review is complete (see [client compatibility](client-compatibility.md)).
+- Verify the configured host-side write approval prompt in the target desktop/Codex build.
 - Go MCP SDK selection.
 - Final approval UX and trust boundary between host confirmation and server-side enforcement.
 - Local allowlist configuration format and administrative workflow.
