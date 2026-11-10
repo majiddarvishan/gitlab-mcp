@@ -4,8 +4,9 @@
 The MCP server bridges a cloud-connected AI client and a private GitLab service. GitLab's network privacy does not make repository content local to the model: content returned by tools may be transmitted to the AI provider for inference.
 
 ## Credentials
-- Use a dedicated GitLab identity or token where feasible.
-- Apply minimum required scopes and project/group permissions.
+- Prefer a project-scoped credential for each allowlisted project; final token type and role remain Proposed pending ADR-0015.
+- Do not default to an everyday user's broad PAT when a project-scoped token is viable.
+- Apply the minimum token scope and GitLab project role required for the approved capabilities. GitLab 18.8 `api` scope is broad within the token's resource scope; the MCP tool surface and allowlist must provide additional restrictions.
 - Store credentials using an OS-appropriate secret store where practical; do not put tokens in command-line arguments, source files, or logs.
 - Support credential rotation and revocation.
 - Never include real credentials in examples or tests.
