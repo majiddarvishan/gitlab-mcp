@@ -58,14 +58,14 @@ An empty, absent, malformed, or inaccessible `approved_by` list does not satisfy
 
 For every distinct numeric approver ID:
 
-1. Request `GET /api/v4/users/:id` using the regular-user API context available to the MCP PAT. Verify that the returned `id` exactly matches the candidate ID; the documented regular-user response includes `bot` and `state` fields.
-2. Inspect `bot` and `state`. The candidate must have `bot=false` and `state=active`; a missing or contradictory field is not proof of a human account.
-3. Request `GET /api/v4/users?username=:username&humans=true&active=true`. Verify that the response contains the exact candidate numeric ID. The `humans` filter is documented to return regular users that are neither bot nor internal users. If `locked` is returned, it must be `false`.
-4. Do not use `exclude_internal=true` by itself as proof of a human account: GitLab documents that this filter does not exclude project/group bot users. `without_project_bots=true` also does not replace the `humans=true` check for internal users.
-5. Current Users API documentation lists `humans`, but does not state the GitLab version in which it was introduced. Test the filter on the exact target patch; do not infer 18.8 support from current documentation.
-6. If the `humans=true` filter is unsupported, unavailable, or inconsistent with the single-user response, identify another version-supported method that demonstrably excludes both bot and internal users. Until one is validated, classification fails closed.
+1. Request `GET /api/v4/users/:id` using the regular authenticated PAT. The regular-user form of this endpoint is documented for any signed-in user; it is not the administrator-only response. Verify that the returned `id` exactly matches the candidate ID and inspect `bot`, `state`, and `locked`.
+2. Require `bot=false`, `state=active`, and `locked=false`. Missing, conflicting, or inaccessible fields fail classification.
+3. Request `GET /api/v4/users?username=:username&humans=true&active=true`. Verify that the response contains exactly the candidate numeric ID. `humans=true` filters out bot and internal accounts; `active=true` limits results to active users.
+4. The REST `humans` filter was added in GitLab 17.3 (Merge Request [!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200), milestone 17.3), so it predates the v18.8.4-ee target. The target-instance check is still required to confirm deployed behavior and access.
+5. Do not use `exclude_internal=true` by itself as proof of a human account: it does not exclude project/group bot users. `without_project_bots=true` alone does not establish that an account is not an internal user.
+6. If the filter is rejected, ignored, or inconsistent with the single-user response, classification fails closed; do not silently fall back to `bot=false` alone.
 
-The `username` lookup is a lookup aid only. Authorization decisions and identity comparisons must use numeric GitLab user IDs.
+The `username` lookup is a lookup aid only. Authorization decisions and identity comparisons must use numeric GitLab user IDs. The regular-user `GET /users/:id` representation is documented for signed-in non-admin users and includes `state`, `locked`, and `bot`.
 
 ### 2.5 Apply the accepted independence rule
 
@@ -92,7 +92,7 @@ At least one candidate must qualify. Multiple non-qualifying approvers do not co
 | User lookup returns 403, 404, a different ID, `bot` is missing/true, or state is not active | Does not qualify |
 | Candidate is absent from the `humans=true&active=true` result or result does not match the exact numeric ID | Does not qualify |
 | Candidate is returned with `locked=true` | Does not qualify |
-| `humans=true` is unsupported or its result conflicts with user details | Does not qualify until another safe method is validated |
+| `humans=true` is rejected, ignored, or conflicts with the single-user response | Does not qualify; merge is blocked |
 | `approved_by` is empty, missing, or cannot be read | Does not qualify |
 | One qualifying human and additional non-qualifying approvers exist | Qualifies based on the one verified human |
 | Approval disappears or MR head changes before merge | Merge is blocked and the preflight must be repeated |
@@ -136,3 +136,4 @@ SEC-009 may be marked DONE only when the target-instance test demonstrates relia
 - [GitLab merge request approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [GitLab Users API](https://docs.gitlab.com/api/users/) (regular-user `GET /users/:id` fields and `humans` filter)
 - [GitLab internal users](https://docs.gitlab.com/administration/internal_users/)
+- [GitLab !159200 — REST human-user filter added in milestone 17.3](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200)
