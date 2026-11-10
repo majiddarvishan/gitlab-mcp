@@ -14,7 +14,7 @@ Before MCP may merge a merge request, it must establish that at least one accoun
 2. Different from the human account that owns the MCP Personal Access Token.
 3. Different from the merge request author.
 
-The reviewer-independence rule is an accepted user decision (D-020). The operator procedure is also available in the [target-instance validation runbook](../environment/validation-runbook.md). This document defines how to validate that the target GitLab Free 18.8 instance exposes enough API data to enforce it.
+The reviewer-independence rule is an accepted user decision (D-020). The operator procedure is also available in the [target-instance validation runbook](../environment/validation-runbook.md). This document defines how to validate that the target GitLab Self-Managed EE v18.8.4 instance (Free subscription tier) exposes enough API data to enforce it.
 
 **This is a test plan, not evidence that the target instance has passed.** MCP merge remains disabled until the tests below pass on the exact installed patch and CE/EE distribution.
 
