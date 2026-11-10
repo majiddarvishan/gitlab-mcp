@@ -49,7 +49,7 @@ The following choices remain Proposed and are not implementation commitments yet
 - Primary local transport: STDIO.
 - GitLab integration: REST API v4.
 
-See [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Detailed Task Backlog](planning/tasks.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
+See [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Client Compatibility](docs/architecture/client-compatibility.md), [GitLab Environment Profile](docs/environment/gitlab-target.md), [Detailed Task Backlog](planning/tasks.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
 
 ## Important data-handling note
 
