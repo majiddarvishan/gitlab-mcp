@@ -2,6 +2,7 @@
 
 - **Profile status:** Partially confirmed; patch and distribution details pending
 - **Last updated:** 2026-11-10
+- **Validation procedure:** [Target-instance validation runbook](validation-runbook.md)
 - **Offering:** GitLab Self-Managed
 - **Subscription tier:** Free (user-confirmed)
 - **Version line:** 18.8 (user-confirmed)
@@ -53,8 +54,9 @@ If the page shows only `18.8`, the administrator can also provide the exact pack
 - GitLab Free allows eligible users with Developer role or higher to approve merge requests.
 - On Free, these approvals are optional; they do not prevent merging when no approval exists.
 - Required approval rules and richer approval-policy configuration require Premium or Ultimate.
-- The MR approval-state API is available on Free, but response attributes depend on CE/EE distribution. On Community Edition, the documented response is limited to `approved`, `approved_by`, `user_can_approve`, and `user_has_approved`.
+- The MR approval-state API is available on Free, but response attributes depend on CE/EE distribution. On Community Edition, the documented response is limited to `approved`, `approved_by`, `user_can_approve`, and `user_has_approved`. Current GitLab API documentation states that EE returns additional attributes even without a paid license; the exact target response must still be captured and verified.
 - The richer `approval_state` endpoint and approval-rule details are Premium/Ultimate. Do not assume they are available on this target.
+- The Users API documents `GET /users/:id` for a regular authenticated user with `bot` and `state` fields, and `GET /users?username=:username&humans=true` to select regular users who are neither bot nor internal users. The current Users API page does not state when the `humans` filter was introduced; GitLab 18.8 support must be tested on the target instance.
 - If the product must require at least one human approval before MCP performs a merge, that must be an explicit MCP-side policy; it is not enforced by the Free tier itself.
 
 ## Version maintenance and security note
@@ -86,3 +88,6 @@ This does not prevent designing or testing MCP compatibility with 18.8. However,
 - [GitLab Search API](https://docs.gitlab.com/api/search/)
 - [Merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
 - [Merge request approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
+- [Users API](https://docs.gitlab.com/api/users/)
+- [Internal users](https://docs.gitlab.com/administration/internal_users/)
+- [Personal access tokens](https://docs.gitlab.com/user/profile/personal_access_tokens/)
