@@ -36,7 +36,7 @@ The MCP process runs on the user's workstation. It uses the workstation's existi
 - Repository code changes are made on a dedicated working branch and proposed through an MR.
 - MCP never writes directly to the default branch or a protected branch.
 - Creating a branch, committing changes, creating/updating an MR, and merging are distinct operations with distinct approvals.
-- MCP may merge an MR only when at least one verified human approval is recorded in GitLab and the user separately approves the exact merge operation; fresh preflight is mandatory.
+- MCP may merge an MR only when at least one verified human reviewer distinct from both the PAT owner and MR author has approved it in GitLab and the user separately approves the exact merge operation; fresh preflight is mandatory. Merge remains disabled if reviewer independence cannot be verified.
 - MCP must not approve or unapprove an MR; review approval remains a human action in GitLab.
 - First-release CI/CD access is read-only and limited to pipeline/job metadata and status.
 - Job logs/traces and artifacts are deferred and must not be fetched in the first release.
