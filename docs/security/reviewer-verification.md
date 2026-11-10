@@ -103,6 +103,14 @@ The identity check does not replace the merge preflight in ADR-0014.
 
 Before presenting the MCP merge approval, capture the current MR head SHA and approval state. Immediately before merge, re-read both and verify that the same qualifying independent reviewer remains recorded for that MR state. Any relevant change invalidates the pending MCP merge approval.
 
+## EE response interpretation for v18.8.4-ee
+
+Because the target uses the EE distribution, the `GET .../approvals` endpoint is documented to return the full EE response schema even without a paid license. Useful fields can include `approvals_required`, `approvals_left`, `approval_rules_left`, `state`, and `merge_status`, in addition to `approved_by`.
+
+Do not use `approved=true` as proof of a human approval. On EE, that flag can be true when no approval rules apply even if `approved_by` is empty. For D-020, the gate is satisfied only by at least one account in `approved_by` that passes the regular-human classification and is distinct from both the PAT owner and MR author.
+
+The separate `GET .../approval_state` endpoint for detailed approval-rule information remains Premium/Ultimate and must not be required by the Free-tier workflow.
+
 ## 5. What this API check does and does not prove
 
 The approvals API records the GitLab account to which an approval is attributed. It does not prove whether the approval was submitted through the web UI or by an API client, nor does it prove which physical person was operating the account. This project uses the accepted account-independence rule; it must not claim stronger proof of interaction channel or personal presence than GitLab exposes.
