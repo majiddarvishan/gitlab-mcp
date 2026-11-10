@@ -18,7 +18,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Review and accept implementation language.
 - [ ] Review and accept MCP transport.
 - [ ] Finalize exact capability inventory and tool contracts.
-- [ ] Finalize detailed security and approval model.
+- [ ] Finalize detailed security and approval model; validate PAT account permissions and independent reviewer identity.
 - [x] Review official ChatGPT Desktop and Codex local MCP compatibility; see [client compatibility](../docs/architecture/client-compatibility.md).
 - [ ] Run local MCP runtime smoke test on the target workstation (TST-009).
 
@@ -26,9 +26,10 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Select and document MCP SDK.
 - [ ] Define tool naming, input schemas, and response contracts.
 - [ ] Define local project allowlist format and administration workflow.
-- [ ] Decide GitLab token type, execution identity, and required project role (SEC-001 / ADR-0015).
-- [ ] Validate Project Access Token resource boundary and internal-visibility behavior (SEC-010).
-- [ ] Validate Developer versus Maintainer permissions for protected-branch merge (SEC-011).
+- [x] Select the user's Personal Access Token and human execution identity (SEC-001 / ADR-0015).
+- [ ] Validate PAT reach against the MCP project allowlist (SEC-010).
+- [ ] Validate the user's actual per-project permissions, including protected-branch merge (SEC-011).
+- [ ] Validate PAT expiry and rotation behavior (SEC-012).
 - [ ] Define configuration and credential storage.
 - [ ] Define approval lifecycle, merge preflight checks, and failure behavior.
 - [x] Confirm GitLab Free tier and 18.8 minor version.
