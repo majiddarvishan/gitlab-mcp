@@ -310,8 +310,9 @@ These tasks must be completed before implementation can be considered. They are 
 **Acceptance criteria**
 - ADR-0016 is explicitly accepted or superseded with another approved backend.
 - A canary secret is stored/retrieved/removed through the actual provider; no PAT is needed for this test.
-- The MCP runtime's process user and D-Bus session access are verified.
-- Missing provider, locked/missing item, multiple matches, and retrieval failures all fail closed.
+- The normal desktop user's D-Bus session, provider, default collection, and lock/unlock behavior are verified with a non-secret canary.
+- The design specifies fail-closed handling for missing provider, locked/missing item, multiple matches, and retrieval failures.
+- Actual ChatGPT Desktop/Codex-launched MCP D-Bus access is verified later in TST-009 before the runtime is allowed to use the PAT.
 - No secret is stored in source control, plaintext configuration, process arguments, environment variables, AI-visible output, or logs.
 - Setup/replacement/revocation procedures are documented.
 - No real PAT is created until SEC-002 is DONE.
