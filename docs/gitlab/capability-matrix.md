@@ -181,16 +181,21 @@ Approval must be bound to the exact operation and parameters, be single-use, and
 - Report version, edition, instance-configuration, or permission limitations explicitly.
 - Target GitLab Self-Managed Enterprise Edition v18.8.4-ee with Free subscription tier and REST API v4. Validate version-sensitive behavior against the installed build.
 
+## Confirmed environment
+
+- GitLab Self-Managed Enterprise Edition v18.8.4-ee.
+- Free subscription tier.
+- DES-001 is DONE. Version-sensitive API behavior remains subject to tests against this exact instance.
+
 ## Remaining design questions
 
 The following are not resolved by the accepted decisions above:
-1. Exact GitLab build is confirmed as EE v18.8.4-ee with Free subscription (DES-001 DONE).
-2. Whether project allowlist entries will use numeric project IDs only or permit namespaced paths at configuration time (runtime authorization should use canonical IDs).
-3. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
-4. Whether direct file deletion/move operations should be included in initial code-writing tools.
-5. Whether the project-scoped basic code-search API works as expected on the target 18.8 Free instance; advanced/exact/global/group code search is excluded.
-6. Validate the Free-tier human-approver verification against the exact deployed EE v18.8.4 instance (implementation prerequisite; policy is accepted in ADR-0014).
-7. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
+1. Whether project allowlist entries will use numeric project IDs only or permit namespaced paths at configuration time (runtime authorization should use canonical IDs).
+2. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
+3. Whether direct file deletion/move operations should be included in initial code-writing tools.
+4. Whether the project-scoped basic code-search API works as expected on the target 18.8 Free instance; advanced/exact/global code search is excluded.
+5. Validate the Free-tier human-approver verification against the exact deployed EE v18.8.4 instance (implementation prerequisite; policy is accepted in ADR-0014).
+6. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
 
 ## Official GitLab API references
 
