@@ -35,7 +35,7 @@ The project is documentation-first. No implementation is approved until the requ
 | Clients | ChatGPT Desktop first; Codex is an acceptable fallback |
 | Project access | Explicit local project allowlist |
 | Repository code changes | Dedicated working branch followed by MR |
-| Merge | Supported only with separate, operation-specific approval |
+| Merge | Requires a verified human GitLab approval plus separate, operation-specific MCP approval |
 | MR approval | Human-only; MCP may read approval state |
 | CI/CD | Read pipeline/job metadata and status only |
 | Job logs/artifacts | Deferred, excluded from first release |
