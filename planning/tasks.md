@@ -36,7 +36,7 @@ These tasks must be completed before implementation can be considered. They are 
 - **Status:** BLOCKED (partially confirmed)
 - **Depends on:** Exact patch and CE/EE distribution string
 - **Owner:** User provides instance facts; project records sanitized result
-- **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
+- **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md); [validation runbook](../docs/environment/validation-runbook.md)
 
 **Confirmed**
 - Self-Managed, GitLab Free tier, version 18.8.
@@ -196,14 +196,14 @@ These tasks must be completed before implementation can be considered. They are 
 - **Priority:** P0
 - **Status:** OPEN
 - **Depends on:** DES-001, SEC-001
-- **Reference:** [SEC-009 reviewer verification test protocol](../docs/security/reviewer-verification.md)
+- **Reference:** [SEC-009 reviewer verification test protocol](../docs/security/reviewer-verification.md); [target-instance validation runbook](../docs/environment/validation-runbook.md)
 - **Related decisions:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
 **Work**
 - Run the protocol against the exact installed GitLab 18.8 patch and CE/EE distribution using a disposable or explicitly approved test project.
 - Resolve the PAT owner through GET /user and the MR author through the MR API; compare numeric GitLab user IDs.
 - Read approved_by from the MR approvals endpoint and resolve every candidate approver through the Users API.
-- Validate whether humans=true on GET /users is supported and reliably excludes both bot and internal accounts on this target instance. Do not treat bot=false or exclude_internal=true alone as sufficient proof.
+- Validate `GET /users/:id` regular-user fields (`bot`, `state`) and `GET /users?username=:username&humans=true&active=true`; verify the exact numeric ID is returned and that the filter excludes bot and internal users on this target instance. Do not treat `bot=false` or `exclude_internal=true` alone as sufficient proof.
 - Test regular human, PAT owner, MR author, project/group bot, internal user, inactive/locked user, inaccessible user, and ambiguous/missing metadata cases.
 - Verify approval freshness by re-reading the MR head SHA and approval list immediately before merge.
 - Do not infer the interaction channel from an approval record; GitLab account metadata does not prove whether approval was submitted through UI or API.
@@ -248,7 +248,8 @@ These tasks must be completed before implementation can be considered. They are 
 - **Priority:** P0
 - **Status:** BLOCKED
 - **Depends on:** SEC-001, DES-001
-- **Reference:** [Authentication model](../docs/security/authentication-model.md)
+- **Reference:** [Authentication model](../docs/security/authentication-model.md); [target-instance validation runbook](../docs/environment/validation-runbook.md)
+- **Execution gate:** This is an MCP integration test; do not mark DONE until the allowlist implementation exists and is authorized for testing.
 
 **Work**
 - On a disposable test setup, identify one project accessible to the PAT owner that is explicitly allowlisted and one project accessible to the same user that is not allowlisted. This validates the selected personal PAT; do not describe or test it as project-scoped.
@@ -305,6 +306,12 @@ These tasks must be completed before implementation can be considered. They are 
 - **Priority:** P1
 - **Status:** BLOCKED
 - **Depends on:** SEC-001, SEC-002
+- **Reference:** [Target-instance validation runbook](../docs/environment/validation-runbook.md)
+
+**Current documented baseline (must be verified on target)**
+- GitLab currently documents a default expiry date 365 days from token creation when no date is supplied, unless the instance setting is changed.
+- Token expiry takes effect at midnight UTC on the expiry date.
+- Maximum lifetime enforcement can depend on edition and instance configuration; do not assume Ultimate-only administrator settings exist on a Free target.
 
 **Work**
 - Confirm PAT expiration defaults and maximum lifetime enforced by the target instance.
