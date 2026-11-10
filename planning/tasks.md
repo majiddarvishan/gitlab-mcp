@@ -201,7 +201,7 @@ These tasks must be completed before implementation can be considered. They are 
 - Run the protocol against the exact installed GitLab 18.8 patch and CE/EE distribution using a disposable or explicitly approved test project.
 - Resolve the PAT owner through GET /user and the MR author through the MR API; compare numeric GitLab user IDs.
 - Read approved_by from the MR approvals endpoint and resolve every candidate approver through the Users API.
-- Validate `GET /users/:id` regular-user fields (`bot`, `state`) and `GET /users?username=:username&humans=true&active=true`; verify the exact numeric ID is returned and that the filter excludes bot and internal users on this target instance. Do not treat `bot=false` or `exclude_internal=true` alone as sufficient proof.
+- Use regular-user `GET /users/:id` (no admin role required) to verify exact numeric ID, `bot=false`, `state=active`, and `locked=false`. The `humans=true` filter in `GET /users?username=:username&humans=true&active=true` was added in GitLab 17.3 ([!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200)); verify exact-ID matching and exclusion of bot/internal accounts on the target instance. Do not treat `bot=false` or `exclude_internal=true` alone as sufficient proof.
 - Test regular human, PAT owner, MR author, project/group bot, internal user, inactive/locked user, inaccessible user, and ambiguous/missing metadata cases.
 - Verify approval freshness by re-reading the MR head SHA and approval list immediately before merge.
 - Do not infer the interaction channel from an approval record; GitLab account metadata does not prove whether approval was submitted through UI or API.
@@ -210,7 +210,7 @@ These tasks must be completed before implementation can be considered. They are 
 **Acceptance criteria**
 - The exact target patch and CE/EE distribution are recorded in sanitized form.
 - At least one qualifying regular human approver can be distinguished from bots/internal users and is numerically distinct from both PAT owner and MR author.
-- The human-account classification method is verified on the target instance; unsupported filters or incomplete metadata fail closed.
+- The human-account classification method is verified on the target instance; the supported `humans` filter and exact-ID matching are used, and inconsistent/incomplete metadata fails closed.
 - Missing, inaccessible, inactive, ambiguous, stale, or changed approval state blocks merge.
 - Sanitized evidence is recorded without publishing user IDs, usernames, project identifiers, internal URLs, or credentials.
 - SEC-009 remains OPEN until target-instance evidence is reviewed; defining this protocol alone does not complete the test.
