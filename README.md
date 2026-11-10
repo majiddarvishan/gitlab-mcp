@@ -29,7 +29,7 @@ The project is documentation-first. No implementation is approved until the requ
 | Area | Decision |
 |---|---|
 | Git provider | GitLab Self-Managed |
-| Target version | GitLab Free 18.8; exact patch and CE/EE distribution pending |
+| Target version | GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier |
 | Network | Private/internal; workstation already has access |
 | MCP location | Local workstation |
 | Clients | ChatGPT Desktop first; Codex is an acceptable fallback |
@@ -46,7 +46,7 @@ The project is documentation-first. No implementation is approved until the requ
 
 The selected PAT is not project-scoped. Its effective reach follows the user's GitLab memberships and permissions; therefore, the MCP allowlist is a mandatory server-side control, not a restriction on the token itself. GitLab audit history attributes MCP operations to the PAT owner's human account rather than a bot identity. See [ADR-0015](docs/decisions/0015-gitlab-token-and-execution-identity.md) and the [authentication model](docs/security/authentication-model.md).
 
-## GitLab Free 18.8 constraints
+## GitLab Enterprise Edition 18.8.4-ee with Free subscription constraints
 
 - Basic code search is limited to a project; advanced/exact and global/group code search are not part of the Free-tier baseline.
 - MR approvals are optional on Free; required approval rules are not included. The accepted MCP policy requires one verified human GitLab approval plus a separate MCP merge confirmation.
