@@ -181,7 +181,8 @@ SEC-002 may be marked DONE only when all of the following are true:
 - [ ] A Secret Service provider is available to the normal desktop user.
 - [ ] The local canary test has passed and the canary item has been deleted.
 - [ ] The default collection alias is verified; a canary secret can be stored, retrieved, and removed.
-- [ ] The keyring's lock/unlock behavior is understood and the MCP process can access an unlocked item.
+- [ ] The keyring's lock/unlock behavior is understood and the Secret Service is available in the intended desktop user session.
+- [ ] Actual ChatGPT Desktop/Codex child-process access to the D-Bus service is verified later in TST-009, before the runtime is allowed to use the PAT.
 - [ ] Missing provider, missing item, locked keyring, ambiguous item, and read errors all fail closed without fallback.
 - [ ] Runtime retrieval is designed around direct D-Bus access, not shelling out to print the PAT.
 - [ ] The setup, replacement, emergency-revocation, and sanitized diagnostic procedures are accepted.
