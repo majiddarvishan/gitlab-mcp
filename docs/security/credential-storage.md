@@ -1,13 +1,15 @@
 # Local Credential Storage Design
 
 - **Status:** Proposed; user approval pending
-- **Initial platform assumption:** Linux desktop session running the local MCP process
+- **Execution context:** Confirmed — MCP will run on the same Linux desktop and under the same user account logged into the graphical session
 - **Related task:** SEC-002
 - **Related ADR:** [ADR-0016 — Linux Secret Service credential storage](../decisions/0016-linux-secret-service-credential-storage.md)
 - **Target GitLab:** Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
 - **Last reviewed:** 2026-11-10
 
 ## 1. Purpose
+
+**Deployment context confirmed (2026-11-10):** The user confirmed that the MCP server will run on the same Linux desktop and under the same account currently logged into the graphical session. This resolves the platform/session assumption for the initial backend. It does not constitute acceptance of ADR-0016, completion of SEC-002, authorization to implement, or permission to create a PAT.
 
 Define how the local MCP process stores and retrieves the user's GitLab Personal Access Token (PAT) without putting the token in model-visible content, source control, ordinary configuration, process arguments, or logs.
 
@@ -177,7 +179,7 @@ Headless SSH, cron, system services, and sessions without an unlocked user keyri
 
 SEC-002 may be marked DONE only when all of the following are true:
 
-- [ ] User confirms that the MCP server runs on the same Linux desktop session targeted by this design, or a different platform/backend is selected.
+- [x] User confirmed that the MCP server will run on the same Linux desktop and under the same account logged into the graphical session.
 - [ ] A Secret Service provider is available to the normal desktop user.
 - [ ] The local canary test has passed and the canary item has been deleted.
 - [ ] The default collection alias is verified; a canary secret can be stored, retrieved, and removed.
