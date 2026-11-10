@@ -220,18 +220,60 @@ These tasks define the security boundary before code is authorized.
 - **Priority:** P0
 - **Status:** OPEN
 - **Depends on:** DES-001, DES-006
+- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
+- **Related ADR:** [ADR-0015 (Proposed)](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
 **Work**
-- Compare suitable GitLab credential types for a local user-operated MCP integration.
-- Determine the least-privilege scopes and project permissions needed for the accepted read/write capabilities.
-- Decide whether operations execute as the user's GitLab identity or a dedicated service identity.
-- Define how commit author/committer identity is represented and how audit attribution is preserved.
+- Compare PAT, project access token, group access token, and OAuth 2.0 for GitLab Self-Managed Free 18.8.
+- Decide between a human-user execution identity and per-project bot identities.
+- Review the `api` scope blast radius and the lack of fine-grained PAT permissions in 18.8.
+- Determine the minimum token role needed for branch/commit/MR work and the separately approved merge operation.
+- Define how project-bot commit attribution and human-reviewer identity separation are preserved.
 
 **Acceptance criteria**
-- A credential and identity decision is recorded.
-- Required scopes and GitLab roles are mapped to individual capabilities.
+- ADR-0015 is Accepted, Rejected, or Superseded after explicit user decision.
+- Token type, identity, resource scope, scopes, and role are documented.
 - The selected identity can be attributed unambiguously in GitLab audit history.
 - No credential is exposed to the model or repository.
+
+## SEC-010 — Test project access token scope and internal-visibility behavior
+
+- **Priority:** P0
+- **Status:** BLOCKED
+- **Depends on:** SEC-001, DES-001
+- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
+
+**Work**
+- Provision a disposable Project Access Token in a test project using the selected candidate role and scope.
+- Verify it can access its associated project.
+- Verify it cannot read or mutate a second project that is not in the MCP allowlist.
+- Specifically test a second project with Internal visibility, because GitLab documentation notes an internal-user access caveat for project access tokens.
+- Record only sanitized status/permission outcomes.
+
+**Acceptance criteria**
+- The token's effective resource boundary is demonstrated against the target GitLab 18.8 CE/EE build.
+- A cross-project request is denied or is safely blocked by the MCP allowlist before GitLab data is returned.
+- The result and residual risk are recorded; no internal project names or identifiers are published.
+
+## SEC-011 — Validate token roles against protected-branch merge permissions
+
+- **Priority:** P0
+- **Status:** BLOCKED
+- **Depends on:** SEC-001, DES-001
+- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
+
+**Work**
+- Test Developer-level Project Access Token for branch creation, file changes, commit creation, MR creation, and merge.
+- Test merge against the project's actual protected default branch.
+- Determine whether Maintainer role is required under the current branch rules.
+- Compare the privilege increase from a Maintainer project bot with the alternative of leaving MCP merge unavailable for projects where Developer cannot merge.
+- Do not change protected-branch rules as part of the test unless the user explicitly authorizes that separate change.
+
+**Acceptance criteria**
+- Effective operation permissions for Developer and Maintainer token roles are recorded.
+- The least-privilege role that satisfies the accepted workflow is identified.
+- Any need for Maintainer is explicitly presented for user decision.
+- No protected-branch policy has been weakened implicitly.
 
 ## SEC-002 — Define local secret storage and credential lifecycle
 
@@ -248,6 +290,22 @@ These tasks define the security boundary before code is authorized.
 - Credentials are not stored in source control, plaintext configuration, process arguments, or ordinary logs.
 - Setup and rotation procedures are documented.
 - Missing, invalid, expired, and revoked credentials produce clear non-secret errors.
+
+## SEC-012 — Validate GitLab token expiration and rotation behavior
+
+- **Priority:** P1
+- **Status:** BLOCKED
+- **Depends on:** SEC-001, SEC-002
+
+**Work**
+- Confirm token expiration defaults and maximum lifetime enforced by the target instance.
+- Define rotation and revocation behavior for per-project credentials.
+- Verify the MCP can distinguish expired, revoked, rotated, and under-scoped tokens without exposing token values.
+
+**Acceptance criteria**
+- The credential lifecycle is documented.
+- Rotation does not cause uncontrolled or ambiguous credential state.
+- Revoked/expired tokens fail with clear, non-secret diagnostics.
 
 ## SEC-003 — Define project allowlist configuration and administration
 
@@ -807,13 +865,14 @@ The next tasks to work through, in order, are:
 
 1. **DES-001** — Obtain exact 18.8 patch and CE/EE distribution; Free tier and 18.8 minor are confirmed.
 2. **SEC-009** — Verify that GitLab Free 18.8 exposes enough metadata to distinguish a human MR approver from bot/internal accounts.
-3. **SEC-001 / SEC-002** — Decide GitLab identity, token type, and secure local credential storage.
-4. **SEC-003** — Finalize local project allowlist format and administration.
-5. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and its server-side enforcement.
-6. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
-7. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
-8. **DES-010** — Record GitLab 18.8 upgrade plan or explicit risk acceptance.
-9. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
+3. **SEC-001** — Decide between per-project Project Access Tokens, a dedicated user PAT, or OAuth, including the token role required for protected-branch merge.
+4. **SEC-010 / SEC-011** — Validate Project Access Token isolation and Developer/Maintainer permissions on a test project.
+5. **SEC-002 / SEC-003** — Finalize secure token storage and local project allowlist administration.
+6. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and its server-side enforcement.
+7. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+8. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
+9. **DES-010** — Record GitLab 18.8 upgrade plan or explicit risk acceptance.
+10. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
 
