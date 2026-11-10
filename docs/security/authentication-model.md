@@ -104,6 +104,8 @@ The allowlist limits what the MCP application will do; it does not make a leaked
 
 ## Human approval identity separation
 
+The target-instance verification procedure and negative test matrix are maintained in [SEC-009 reviewer verification](reviewer-verification.md).
+
 ADR-0014 remains in force: merge requires a verified human GitLab approval plus a separate, exact-operation MCP user approval. MCP may read approval state but must not approve, unapprove, or reset an MR approval.
 
 The selected PAT belongs to a human user, so GitLab may expose the execution identity as a regular human account. A GitLab approval record identifies the approving account but does not prove whether the approval was entered through the GitLab UI or by an API client. The approval of the PAT owner must therefore not automatically be treated as independent review.
