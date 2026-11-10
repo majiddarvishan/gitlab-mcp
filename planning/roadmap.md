@@ -20,9 +20,11 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Finalize exact capability inventory and tool contracts.
 - [ ] Complete target-instance security validation: PAT permissions, allowlist isolation, and independent human reviewer identity.
 - [x] Review official ChatGPT Desktop and Codex local MCP compatibility; see [client compatibility](../docs/architecture/client-compatibility.md).
+- [ ] Evaluate existing GitLab MCP implementations against project security requirements (DES-012); no upstream adoption or code changes are authorized.
 - [ ] Run local MCP runtime smoke test on the target workstation (TST-009).
 
 ## Phase 1 — Technical design
+- [ ] Complete [existing MCP implementation evaluation](../docs/research/existing-gitlab-mcp-evaluation.md) before choosing custom vs fork/harden (DES-012).
 - [ ] Select and document MCP SDK.
 - [ ] Define tool naming, input schemas, and response contracts.
 - [ ] Define local project allowlist format and administration workflow.
