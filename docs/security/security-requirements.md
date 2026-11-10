@@ -4,11 +4,15 @@
 The MCP server bridges a cloud-connected AI client and a private GitLab service. GitLab's network privacy does not make repository content local to the model: content returned by tools may be transmitted to the AI provider for inference.
 
 ## Credentials
-- Prefer a project-scoped credential for each allowlisted project; final token type and role remain Proposed pending ADR-0015.
-- Do not default to an everyday user's broad PAT when a project-scoped token is viable.
-- Apply the minimum token scope and GitLab project role required for the approved capabilities. GitLab 18.8 `api` scope is broad within the token's resource scope; the MCP tool surface and allowlist must provide additional restrictions.
-- Store credentials using an OS-appropriate secret store where practical; do not put tokens in command-line arguments, source files, or logs.
-- Support credential rotation and revocation.
+- Use the Personal Access Token (PAT) belonging to the user's selected human GitLab account, as recorded in Accepted ADR-0015.
+- The PAT inherits the owning user's effective GitLab permissions and can reach all projects/groups that user can access, subject to token scopes and GitLab policy. It is not scoped to one allowlisted project.
+- Use only the api scope for the initial combined read/write REST API workflow. GitLab 18.8 does not provide fine-grained PAT endpoint permissions; do not add unrelated scopes.
+- Review the PAT owner's group memberships and per-project roles before provisioning. Prefer the least-privileged practical account and do not elevate roles or weaken protected-branch rules to accommodate MCP.
+- Enforce the explicit canonical project allowlist inside MCP on every read and write, including nested and cross-project references. The allowlist constrains MCP behavior but does not restrict direct use of a leaked PAT.
+- Store the PAT in an OS-native secret store where practical. Do not put it in source control, ordinary configuration, command-line arguments, MCP tool arguments, model-visible output, environment dumps, crash reports, or logs.
+- Only the local MCP process may retrieve the PAT and attach it to GitLab API requests. Never return it to the AI client/model.
+- Support expiration, renewal, rotation, and immediate revocation. Redact authentication headers and token-like values from diagnostics.
+- GitLab audit history attributes MCP operations to the PAT owner's human account, not to a bot. MCP-side audit records must distinguish MCP-originated operations without logging secrets.
 - Never include real credentials in examples or tests.
 
 ## Project allowlist enforcement
@@ -19,6 +23,7 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 - Do not implicitly authorize new projects created under an allowed group.
 - Reject unknown, ambiguous, or unlisted projects before making project-scoped API calls.
 - Never permit a caller to override or bypass the allowlist through tool arguments.
+- Because the selected PAT is not project-scoped, test that MCP denies an accessible-but-unlisted project before returning data or issuing a mutation. The allowlist is not a restriction on direct use of the PAT outside MCP.
 
 ## Approval enforcement
 - All mutations require explicit approval for the exact operation.
@@ -27,6 +32,7 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 - The execution layer must reject writes without valid approval.
 - Merge operations require both at least one verified human approval recorded in GitLab and a separate, exact-operation MCP user approval.
 - Verify approver identities as regular human accounts using GitLab's user metadata; reject bots/internal accounts.
+- Because the MCP execution identity is the PAT owner's human account, a proposed additional safeguard is to require the qualifying reviewer to be distinct from both the PAT owner and MR author. Validate this in SEC-009; keep MCP merge disabled until independent-review identity can be established.
 - Re-read approval state and MR head immediately before merge; fail closed if approval is absent, stale, or ambiguous.
 - Human merge-request approval is outside MCP authority. MCP must not expose approve, unapprove, or reset-approval mutations.
 - GitLab authorization, branch protections, merge checks, and approval rules must remain authoritative.
