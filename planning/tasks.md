@@ -203,11 +203,11 @@ These tasks must be completed before implementation can be considered. They are 
 - Verify the approved_by user IDs can be resolved through the GitLab Users API.
 - Confirm the returned user metadata identifies bot/internal accounts reliably (for example, the bot field or a supported humans filter).
 - Define how to handle missing, inaccessible, blocked, or ambiguous user records.
-- Evaluate and confirm the proposed rule that the qualifying human reviewer must be distinct from both the PAT owner (the MCP execution identity) and the MR author.
-- Do not infer that a GitLab approval record proves which client or interaction channel submitted it. Keep MCP merge disabled while independent-review identity cannot be established.
+- Validate the accepted rule that the qualifying human reviewer must be distinct from both the PAT owner (the MCP execution identity) and the MR author.
+- Do not infer that a GitLab approval record proves which client or interaction channel submitted it. Keep MCP merge disabled until independent reviewer identity can be established from target-instance metadata.
 
 **Acceptance criteria**
-- At least one qualifying human approver can be distinguished from bot/internal users and, under the proposed safeguard, from the PAT owner and MR author.
+- At least one qualifying human approver can be distinguished from bot/internal users, the PAT owner, and the MR author.
 - The behavior is verified against the exact target patch and CE/EE distribution.
 - If a qualifying human reviewer cannot be verified, merge is denied.
 - The rule and evidence are documented without publishing user IDs, usernames, or internal URLs.
@@ -381,8 +381,10 @@ These tasks must be completed before implementation can be considered. They are 
 
 **Acceptance criteria**
 - Merge requires an approval separate from all prior operations.
-- The approval is bound to the displayed MR state and parameters.
+- At least one verified GitLab reviewer distinct from the PAT owner and MR author has approved the current MR.
+- The MCP user approval is separate and bound to the displayed MR state and parameters.
 - Stale or changed MR state invalidates the approval.
+- Merge is disabled if reviewer independence cannot be verified.
 - The server never bypasses a GitLab policy rejection.
 
 ## SEC-007 — Define audit logging and diagnostics
