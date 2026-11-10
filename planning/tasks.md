@@ -287,18 +287,34 @@ These tasks must be completed before implementation can be considered. They are 
 ## SEC-002 — Define local secret storage and credential lifecycle
 
 - **Priority:** P0
-- **Status:** OPEN
+- **Status:** OPEN (storage proposal drafted; user acceptance and workstation preflight pending)
 - **Depends on:** SEC-001
+- **Reference:** [Local Credential Storage Design](../docs/security/credential-storage.md)
+- **Related ADR:** [ADR-0016 — Proposed](../docs/decisions/0016-linux-secret-service-credential-storage.md)
+
+**Proposed baseline**
+- Use the Freedesktop Secret Service D-Bus API with the user's login-session keyring for the initial Linux desktop deployment.
+- Run MCP as the regular desktop user in the same D-Bus session; retrieve the PAT directly through Secret Service, not via a runtime `secret-tool lookup` child process.
+- Keep keyring lookup attributes generic and non-sensitive.
+- Fail closed when the provider is unavailable, the item is missing/locked/ambiguous, or the D-Bus session cannot be reached.
+- No plaintext file, environment variable, command-line, AI-chat, or STDIO-input fallback is permitted.
+- Headless SSH/cron/system-service operation is outside this initial proposal.
 
 **Work**
-- Select an OS-appropriate credential store for the user's workstation.
-- Define initial credential setup, replacement, rotation, revocation, and missing/expired token behavior.
-- Define safe handling for non-interactive MCP process startup.
+- Confirm that MCP runs on the same Linux desktop session covered by ADR-0016, or select a different platform/backend.
+- Verify the Secret Service provider and the default collection alias on the workstation.
+- Use a disposable non-secret canary value to test store, lookup, lock/unlock, ambiguity, and delete behavior.
+- Define the setup procedure for a real PAT only after the storage path is accepted and verified.
+- Define planned replacement using a second PAT, emergency revocation, and non-secret diagnostics.
 
 **Acceptance criteria**
-- Credentials are not stored in source control, plaintext configuration, process arguments, or ordinary logs.
-- Setup and rotation procedures are documented.
-- Missing, invalid, expired, and revoked credentials produce clear non-secret errors.
+- ADR-0016 is explicitly accepted or superseded with another approved backend.
+- A canary secret is stored/retrieved/removed through the actual provider; no PAT is needed for this test.
+- The MCP runtime's process user and D-Bus session access are verified.
+- Missing provider, locked/missing item, multiple matches, and retrieval failures all fail closed.
+- No secret is stored in source control, plaintext configuration, process arguments, environment variables, AI-visible output, or logs.
+- Setup/replacement/revocation procedures are documented.
+- No real PAT is created until SEC-002 is DONE.
 
 ## SEC-012 — Validate personal access token expiration and rotation behavior
 
@@ -883,15 +899,16 @@ These tasks must be completed before implementation can be considered. They are 
 
 The exact GitLab build is confirmed and **DES-001 is DONE**. The next design and validation tasks are:
 
-1. **SEC-009** — Run the [reviewer verification protocol](../docs/security/reviewer-verification.md) against EE v18.8.4-ee. The required API filters predate this release; confirm runtime responses and all negative cases. MCP merge stays disabled until this passes.
-2. **SEC-002 / SEC-003** — Finalize OS-native PAT storage and local canonical project allowlist administration.
-3. **SEC-004 / SEC-005** — Finalize trustworthy user approval interaction and server-side approval binding.
-4. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
-5. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and project-level Free code-search behavior.
-6. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
-7. **SEC-012** — Validate PAT expiry and rotation after the storage lifecycle is defined.
-8. **SEC-010 / SEC-011** — Integration-test the personal PAT allowlist boundary and actual per-project permissions after implementation is explicitly authorized.
-9. **TST-009** — Run the local client smoke test after an implementation candidate exists.
+1. **SEC-002** — Review ADR-0016 and validate the Linux Secret Service path with a non-secret canary. No PAT creation until this is DONE.
+2. **SEC-009** — After SEC-002 is DONE and a PAT is safely provisioned, run the [reviewer verification protocol](../docs/security/reviewer-verification.md) against EE v18.8.4-ee. MCP merge stays disabled until this passes.
+3. **SEC-003** — Finalize local canonical project allowlist administration.
+4. **SEC-004 / SEC-005** — Finalize trustworthy user approval interaction and server-side approval binding.
+5. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+6. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and project-level Free code-search behavior.
+7. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
+8. **SEC-012** — Validate PAT expiry and rotation after the storage lifecycle is defined.
+9. **SEC-010 / SEC-011** — Integration-test the personal PAT allowlist boundary and actual per-project permissions after implementation is explicitly authorized.
+10. **TST-009** — Run the local client smoke test after an implementation candidate exists.
 
 **SEC-001 is DONE:** the user selected a Personal Access Token belonging to their existing human GitLab account; see ADR-0015.
 
