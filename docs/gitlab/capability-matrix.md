@@ -109,18 +109,22 @@ Approval of a branch, commit, or merge request creation does not authorize any s
 
 ## Accepted merge policy
 
+**Two independent approvals are mandatory:** at least one verified human approval recorded in GitLab and a separate, exact-operation approval from the user through MCP. This is an MCP-side requirement because GitLab Free approvals are optional.
+
 MCP may merge a merge request, but only as a distinct high-impact operation with its own explicit approval.
 
 Before requesting approval, the MCP must:
 - Confirm the project is allowlisted.
 - Confirm the merge request belongs to the allowlisted project.
 - Read the current MR state, source branch/head, target branch, and merge readiness.
-- Read approval state and relevant pipeline status where available.
+- Read the Free-tier-compatible approval state and verify at least one approver is a regular human account using the Users API.
+- Reject bot/internal approvers and fail closed when an approver cannot be classified.
+- Read relevant pipeline status where available.
 - Identify whether the MR is draft, conflicted, blocked, or otherwise not mergeable.
 - Display the exact project, MR IID, source/target refs, current source HEAD SHA, and merge options.
 - Clearly state that GitLab's own authorization, branch protection, approval rules, CI requirements, and merge checks remain authoritative.
 
-The merge operation must have a separate, single-use approval. Any material change to the MR or merge parameters invalidates the approval and requires a new preview. The MCP must not attempt to bypass a GitLab rejection or policy gate.
+The merge operation must have a separate, single-use user approval in addition to the verified human GitLab approval. Any material change to the MR or merge parameters invalidates the approval and requires a new preview. The MCP must not attempt to bypass a GitLab rejection or policy gate.
 
 ## Accepted human-only MR approval policy
 
@@ -158,7 +162,7 @@ An approval preview should contain, as applicable:
 - MR/issue fields and all labels, assignees, reviewers, or milestones being changed.
 - For merge: MR IID, source/target refs, current source HEAD SHA, merge method/options, readiness warnings, and the available human-approval state.
 
-**Free-tier limitation:** GitLab Free does not enforce required MR approvals. Whether MCP itself must require at least one human approval before executing a merge is an open policy decision tracked by ADR-0014 (Proposed).
+**Accepted Free-tier policy (ADR-0014):** GitLab Free does not enforce required MR approvals, so MCP adds its own gate. At least one verified human account must appear in the Free-tier-compatible `approved_by` list, and the user must separately approve the exact MCP merge operation. If human identity or approval state cannot be verified, MCP refuses to merge.
 
 Approval must be bound to the exact operation and parameters, be single-use, and expire. Any parameter change requires new approval. The execution path must reject a mutation without valid approval. Host-level confirmation UX and server-side enforcement are separate design concerns and both must be evaluated.
 
@@ -185,7 +189,7 @@ The following are not resolved by the accepted decisions above:
 3. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
 4. Whether direct file deletion/move operations should be included in initial code-writing tools.
 5. Whether the project-scoped basic code-search API works as expected on the target 18.8 Free instance; advanced/exact/global/group code search is excluded.
-6. Whether MCP must enforce at least one human MR approval before merging on Free (ADR-0014 Proposed).
+6. Validate the Free-tier human-approver verification against the exact deployed CE/EE distribution and patch version (implementation prerequisite; policy is accepted in ADR-0014).
 7. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
 
 ## Official GitLab API references
