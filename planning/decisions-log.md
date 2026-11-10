@@ -21,6 +21,7 @@ Last updated: 2026-11-10
 | D-015 | Defer job logs and artifacts | Accepted | Excluded from the first release pending data-handling review. |
 | D-016 | Target GitLab Self-Managed Free 18.8 | Accepted | REST API v4; exact patch and CE/EE distribution remain pending. |
 | D-017 | Require human GitLab approval plus separate MCP approval before merge | Accepted | MCP requires one verified human approval recorded in GitLab and a separate operation-specific user confirmation. |
+| D-018 | Use one Project Access Token per allowlisted project | Proposed | Recommended for narrower credential scope; role and exact 18.8 behavior require validation and user approval. |
 
 ## Decision process
 A proposal becomes Accepted only after explicit user agreement. Material changes should be recorded as a new ADR rather than silently changing an accepted decision.
