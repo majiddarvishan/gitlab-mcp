@@ -879,19 +879,19 @@ These tasks must be completed before implementation can be considered. They are 
 
 # Current next-action queue
 
-The next design and validation tasks, in order, are:
+The exact GitLab build is confirmed and **DES-001 is DONE**. The next design and validation tasks are:
 
-1. **DES-001** — Confirm the exact GitLab 18.8 patch and CE/EE distribution.
-2. **SEC-009** — Validate independent human reviewer classification on the exact target instance using the [SEC-009 test protocol](../docs/security/reviewer-verification.md). Merge remains disabled until this passes.
-3. **SEC-010 / SEC-011** — Validate the selected personal PAT's allowlist boundary and the user's actual per-project permissions. These are not Project Access Token tests.
-4. **SEC-002 / SEC-003** — Finalize OS-native PAT storage and local canonical project allowlist administration.
-5. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and server-side enforcement.
-6. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
-7. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and Free-tier code-search behavior.
-8. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
-9. **TST-009** — Run the client smoke test on the target workstation; this is not implementation authorization.
+1. **SEC-009** — Run the [reviewer verification protocol](../docs/security/reviewer-verification.md) against EE v18.8.4-ee. The required API filters predate this release; confirm runtime responses and all negative cases. MCP merge stays disabled until this passes.
+2. **SEC-002 / SEC-003** — Finalize OS-native PAT storage and local canonical project allowlist administration.
+3. **SEC-004 / SEC-005** — Finalize trustworthy user approval interaction and server-side approval binding.
+4. **DES-003 / DES-004 / DES-005** — Decide Go, STDIO, and the MCP SDK/protocol version.
+5. **DES-006 / DES-007 / DES-008 / DES-009** — Freeze the first-release tool list, tool contracts, API mapping, and project-level Free code-search behavior.
+6. **DES-010** — Record the GitLab 18.8 upgrade plan or explicit risk acceptance.
+7. **SEC-012** — Validate PAT expiry and rotation after the storage lifecycle is defined.
+8. **SEC-010 / SEC-011** — Integration-test the personal PAT allowlist boundary and actual per-project permissions after implementation is explicitly authorized.
+9. **TST-009** — Run the local client smoke test after an implementation candidate exists.
 
-**SEC-001 is DONE:** the user selected a Personal Access Token (PAT) belonging to their existing human GitLab account; see ADR-0015.
+**SEC-001 is DONE:** the user selected a Personal Access Token belonging to their existing human GitLab account; see ADR-0015.
 
 No implementation task is authorized by this backlog. Implementation remains blocked until the design baseline is reviewed and explicitly approved by the user.
 
@@ -900,11 +900,11 @@ No implementation task is authorized by this backlog. Implementation remains blo
 
 - **Priority:** P0
 - **Status:** OPEN
-- **Depends on:** DES-001 (partially confirmed), DES-008
+- **Depends on:** DES-001 (DONE), DES-008
 - **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md)
 
 **Work**
-- Verify that project-scoped basic code search is available through the GitLab 18.8 Free instance's REST API.
+- Verify that project-scoped basic code search is available through the GitLab Self-Managed EE v18.8.4-ee instance with the Free subscription tier.
 - Confirm supported search modes, branches/refs, filters, pagination, and result shape.
 - Keep group/global advanced and exact code search out of scope for Free.
 - If the API behavior is insufficient, compare targeted file retrieval, repository archive, and local Git clone/index as alternatives. Do not choose a fallback without documenting storage, freshness, and data-exposure implications.
