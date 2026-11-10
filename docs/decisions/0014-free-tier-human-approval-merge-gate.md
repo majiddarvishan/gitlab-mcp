@@ -6,7 +6,7 @@
 
 ## Context
 
-The target is GitLab Self-Managed Free 18.8. GitLab Free allows eligible users to approve merge requests, but approvals are optional and do not prevent a merge when no approval exists. Required approval rules are a Premium/Ultimate capability.
+The target is GitLab Self-Managed Enterprise Edition v18.8.4-ee with the Free subscription tier. GitLab Free allows eligible users to approve merge requests, but approvals are optional and do not prevent a merge when no approval exists. Required approval rules are a Premium/Ultimate capability.
 
 The project already accepts:
 - MR review approval is a human-only action; MCP must not approve or unapprove an MR.
@@ -40,7 +40,7 @@ The first-release implementation must:
 - Require at least one verified human approval from a qualifying independent reviewer. A missing, empty, unavailable, or ambiguous approval record is not sufficient.
 - Never create, modify, or remove an MR approval. The user must record the review approval in GitLab through a human-operated workflow.
 
-The GitLab approval API's `approved_by` array includes all approvers, regardless of whether those approvals satisfy approval rules. GitLab Free does not provide the Premium/Ultimate `approval_state` endpoint, so MCP must not depend on that endpoint or on required approval-rule fields.
+The GitLab approval API's `approved_by` array includes all approvers, regardless of whether those approvals satisfy approval rules. On this EE distribution, the `/approvals` endpoint returns the full EE response schema even without a paid license. On EE, `approved=true` can be returned when no approval rules apply even if `approved_by` is empty; MCP must therefore inspect `approved_by` and never use `approved` as proof of human review. The separate `/approval_state` endpoint remains Premium/Ultimate and is not part of the Free-tier baseline.
 
 ## Approval freshness and merge preflight
 
@@ -88,7 +88,7 @@ GitLab remains authoritative for user permissions, protected branch rules, CI re
 - MCP may read approval state but has no approval mutation tools.
 - The merge preflight must verify reviewer independence from both the PAT owner and MR author.
 - If the deployed CE/EE distribution does not expose enough information to verify a qualifying independent human approver safely, merge remains disabled until a safe verification method is established.
-- GitLab 18.8 Free remains a supported compatibility target, but exact patch and CE/EE distribution must be confirmed.
+- GitLab Self-Managed EE v18.8.4 with Free subscription is the confirmed compatibility target. The exact instance API response still requires validation.
 
 ## References
 
