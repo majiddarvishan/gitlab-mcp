@@ -77,7 +77,7 @@ SEC-009 must validate that the target GitLab Free 18.8 CE/EE API exposes enough 
 - Confirm the PAT's effective permissions on the exact GitLab Free 18.8 CE/EE instance.
 - Verify that the MCP allowlist denies a project the PAT owner can access but has not explicitly allowlisted.
 - Verify branch, commit, MR, approval-read, and merge permissions for the user's actual role on each test project.
-- Verify the target API can identify a qualifying human reviewer distinct from the PAT owner and MR author; otherwise keep MCP merge disabled.
+- Verify the target API can identify a qualifying human reviewer distinct from the PAT owner and MR author using the SEC-009 procedure (`GET /users/:id` plus the exact-ID match in `GET /users?username=:username&humans=true&active=true`); otherwise keep MCP merge disabled.
 - Verify token expiry, rotation, revocation, and secure local storage behavior.
 - Confirm that diagnostics and MCP tool outputs never expose the PAT.
 
