@@ -20,7 +20,7 @@ Last updated: 2026-11-10
 | D-014 | Keep CI/CD read-only in the first release | Accepted | Pipeline and job metadata/status only; no triggers, retries, or cancellation. |
 | D-015 | Defer job logs and artifacts | Accepted | Excluded from the first release pending data-handling review. |
 | D-016 | Target GitLab Self-Managed Free 18.8 | Accepted | REST API v4; exact patch and CE/EE distribution remain pending. |
-| D-017 | Require at least one human MR approval before MCP merge on Free | Proposed | GitLab Free approvals are optional; pending user decision whether MCP adds this policy gate. |
+| D-017 | Require human GitLab approval plus separate MCP approval before merge | Accepted | MCP requires one verified human approval recorded in GitLab and a separate operation-specific user confirmation. |
 
 ## Decision process
 A proposal becomes Accepted only after explicit user agreement. Material changes should be recorded as a new ADR rather than silently changing an accepted decision.
