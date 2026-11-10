@@ -33,7 +33,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Define configuration and credential storage.
 - [ ] Define approval lifecycle, merge preflight checks, and failure behavior.
 - [x] Confirm GitLab Free tier and 18.8 minor version.
-- [ ] Confirm exact 18.8 patch and CE/EE distribution (DES-001).
+- [x] Confirm exact GitLab build: Enterprise Edition v18.8.4-ee with Free subscription tier (DES-001).
 - [ ] Review 18.8 maintenance status and document upgrade plan/risk acceptance (DES-010).
 - [ ] Validate Free-tier project-level code search API (DES-009).
 - [x] Require a verified human GitLab MR approval plus separate MCP merge approval (DES-011 / ADR-0014).
