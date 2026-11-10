@@ -11,7 +11,7 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 - Enforce the explicit canonical project allowlist inside MCP on every read and write, including nested and cross-project references. The allowlist constrains MCP behavior but does not restrict direct use of a leaked PAT.
 - Store the PAT in an OS-native secret store where practical. Do not put it in source control, ordinary configuration, command-line arguments, MCP tool arguments, model-visible output, environment dumps, crash reports, or logs.
 - Only the local MCP process may retrieve the PAT and attach it to GitLab API requests. Never return it to the AI client/model.
-- Support expiration, renewal, rotation, and immediate revocation. Redact authentication headers and token-like values from diagnostics.
+- Support expiration, planned replacement, and immediate revocation. For planned no-downtime replacement, create and validate a second PAT before revoking the old one. GitLab's Rotate UI invalidates the old token immediately and must not be used when an overlap window is required. Revoke a compromised PAT immediately. Redact authentication headers and token-like values from diagnostics.
 - GitLab audit history attributes MCP operations to the PAT owner's human account, not to a bot. MCP-side audit records must distinguish MCP-originated operations without logging secrets.
 - Never include real credentials in examples or tests.
 
