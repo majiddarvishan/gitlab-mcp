@@ -1,146 +1,197 @@
 # GitLab Capability Matrix
 
-- **Document status:** Proposed for review
+- **Document status:** Partially accepted
 - **Last reviewed:** 2026-11-10
-- **Scope:** Candidate capabilities for the first useful release and later extensions.
-- **Important:** A candidate in this matrix is not automatically approved for implementation.
+- **Compatibility target:** GitLab Self-Managed 18.x
+- **API family:** GitLab REST API v4
+- **Scope:** First-release capabilities and explicitly deferred operations.
 
-This matrix converts the initial feature list into reviewable capabilities. Availability depends on the installed GitLab version, edition/tier, instance configuration, the authenticated user's role, and token scopes. The implementation must discover or report unsupported capabilities instead of assuming every self-managed instance exposes the same behavior.
+The access boundary, repository code workflow, merge/approval policy, CI/CD policy, and GitLab major-version target have been accepted. Candidate features outside those decisions remain subject to detailed capability and tool-contract review.
+
+Availability may depend on the exact GitLab 18.x minor/patch version, edition, instance configuration, authenticated user's role, and token scopes. The implementation must detect and report unsupported features rather than assume identical behavior across installations.
 
 ## Priority and risk model
 
 ### Delivery priority
 - **P0 — Core:** required for useful repository understanding and safe code changes.
 - **P1 — Workflow:** important for normal development collaboration.
-- **P2 — Advanced:** higher-impact, operational, or instance-dependent capabilities.
-- **Deferred:** not part of the initial release unless separately approved.
+- **P2 — Advanced:** higher-impact or instance-dependent capabilities.
+- **Deferred:** excluded from the first release unless separately approved.
 
 ### Mutation risk
-- **Low:** bounded, reversible changes such as creating a working branch or adding a comment.
-- **Medium:** changes to repository content, issue/MR metadata, or branch state.
-- **High:** changes that can affect protected refs, merge code, alter CI/CD execution, access control, or project configuration.
+- **Low:** bounded and generally reversible changes, such as adding a comment.
+- **Medium:** repository content, issue/MR metadata, or working-branch changes.
+- **High:** merge, protected refs, CI/CD execution, access control, or project configuration.
 
-Every mutation, regardless of risk, requires explicit approval for that exact operation. High-risk operations may also require additional restrictions or be disabled by default.
+Every mutation requires explicit approval for that exact operation. High-risk operations additionally require preflight checks and may be disabled when GitLab policy or permissions do not permit them.
+
+## Accepted access boundary
+
+| Rule | Decision |
+|---|---|
+| Project access | Explicit local allowlist only |
+| Visible but unlisted projects | Denied |
+| Group membership | Does not implicitly authorize every group project |
+| Project path | Resolved to canonical project identity before authorization |
+| Allowlist check | Enforced server-side on every project-scoped tool call |
+| Caller-supplied project identifier | Never bypasses allowlist validation |
+
+The first release uses explicit project entries. Recursive group allowlisting or automatic authorization of newly created projects requires a separate decision.
 
 ## Capability inventory
 
-| Domain | Capability | Access | Approval | Priority | Risk | Initial stance |
+| Domain | Capability | Access | Approval | Priority | Risk | First-release decision |
 |---|---|---:|---:|---:|---:|---|
-| Project discovery | List projects visible to the authenticated user | Read | No | P0 | — | Candidate |
-| Project discovery | List groups and subgroups / enumerate group projects | Read | No | P1 | — | Candidate |
-| Project discovery | Read project metadata and feature availability | Read | No | P0 | — | Candidate |
-| Project discovery | Inspect current user's effective project access where API permits | Read | No | P1 | — | Candidate |
-| Repository | Read repository tree at a ref/path | Read | No | P0 | — | Candidate |
-| Repository | Read file content at a branch, tag, or commit | Read | No | P0 | — | Candidate |
+| Project discovery | List explicitly allowlisted projects | Read | No | P0 | — | Accepted |
+| Project discovery | Read metadata for an allowlisted project | Read | No | P0 | — | Accepted |
+| Project discovery | List groups/subgroups and discover unallowlisted projects | Read | No | — | — | Excluded |
+| Project discovery | Inspect effective user access where API permits | Read | No | P1 | — | Candidate |
+| Repository | Read repository tree at a ref/path | Read | No | P0 | — | Accepted |
+| Repository | Read file content at a branch, tag, or commit | Read | No | P0 | — | Accepted |
 | Repository | Read file metadata and last-commit information | Read | No | P1 | — | Candidate |
-| Repository | Search code or repository text | Read | No | P0 | — | Candidate; instance/search-tier dependent |
-| Repository | List branches and tags, including protection metadata | Read | No | P0 | — | Candidate |
+| Repository | Search code/repository text | Read | No | P0 | — | Accepted subject to GitLab 18.x instance support |
+| Repository | List branches and tags, including default/protected status | Read | No | P0 | — | Accepted |
 | Repository | Read blame for a file range | Read | No | P2 | — | Candidate |
-| Repository | Download repository archive | Read | No | P2 | — | Review size and data-exposure limits |
-| Repository writes | Create a working branch from an explicit base ref | Write | Required | P0 | Low | Candidate |
-| Repository writes | Create or update files on an explicitly selected working branch | Write | Required | P0 | Medium | Candidate |
-| Repository writes | Create one commit containing multiple file actions | Write | Required | P0 | Medium | Candidate |
-| Repository writes | Move or delete files / change executable mode | Write | Required | P1 | Medium | Candidate |
-| Repository writes | Delete a branch | Write | Required | P2 | High | Review; protected branches must be blocked |
-| Repository writes | Write directly to the default or a protected branch | Write | Required | Deferred | High | Not recommended for initial release |
-| Commits | List commits and inspect commit metadata | Read | No | P0 | — | Candidate |
-| Commits | Read a commit diff and changed-file summary | Read | No | P0 | — | Candidate |
+| Repository | Download repository archive | Read | No | P2 | — | Deferred pending response-size/data review |
+| Repository writes | Create a dedicated working branch from an explicit base ref | Write | Required | P0 | Low | Accepted |
+| Repository writes | Create/update files on the dedicated working branch | Write | Required | P0 | Medium | Accepted |
+| Repository writes | Create a commit containing approved file actions on the working branch | Write | Required | P0 | Medium | Accepted |
+| Repository writes | Move/delete files or change executable mode on the working branch | Write | Required | P1 | Medium | Candidate |
+| Repository writes | Delete a working branch | Write | Required | P2 | High | Candidate; protected/default branches must be blocked |
+| Repository writes | Write directly to the default branch | Write | Required | — | High | Prohibited |
+| Repository writes | Write directly to any protected branch | Write | Required | — | High | Prohibited |
+| Commits | List and inspect commits | Read | No | P0 | — | Accepted |
+| Commits | Read commit diff and changed-file summary | Read | No | P0 | — | Accepted |
 | Commits | Compare two refs | Read | No | P1 | — | Candidate |
-| Merge requests | List and inspect merge requests | Read | No | P0 | — | Candidate |
-| Merge requests | Read changes, diffs, commits, and changed-file details | Read | No | P0 | — | Candidate |
-| Merge requests | Read notes, discussions, reviewers, and approval status | Read | No | P1 | — | Candidate; approval API may vary by tier |
-| Merge requests | Create a merge request from a working branch | Write | Required | P1 | Medium | Candidate |
-| Merge requests | Update title, description, target branch, labels, assignees, or reviewers | Write | Required | P1 | Medium | Candidate |
+| Merge requests | List and inspect merge requests | Read | No | P0 | — | Accepted |
+| Merge requests | Read changes, diffs, commits, and changed-file details | Read | No | P0 | — | Accepted |
+| Merge requests | Read notes, discussions, reviewers, and approval state | Read | No | P1 | — | Accepted |
+| Merge requests | Create an MR from a working branch | Write | Required | P0 | Medium | Accepted |
+| Merge requests | Update MR title/description/target/labels/assignees/reviewers | Write | Required | P1 | Medium | Candidate |
 | Merge requests | Add general or diff discussion comments | Write | Required | P1 | Low | Candidate |
-| Merge requests | Edit or resolve discussion threads | Write | Required | P2 | Medium | Review |
-| Merge requests | Approve a merge request | Write | Required | P2 | High | Separate policy decision |
-| Merge requests | Close or reopen a merge request | Write | Required | P1 | Medium | Candidate |
-| Merge requests | Merge a merge request | Write | Required | P2 | High | Separate policy decision; default disabled |
-| Issues | List, search, and inspect project issues | Read | No | P1 | — | Candidate |
-| Issues | Read issue notes, discussions, labels, milestones, and relationships | Read | No | P1 | — | Candidate |
-| Issues | Create an issue | Write | Required | P1 | Low | Candidate |
-| Issues | Update title, description, labels, assignees, milestone, or due date | Write | Required | P1 | Medium | Candidate |
-| Issues | Close or reopen an issue | Write | Required | P1 | Medium | Candidate |
-| Issues | Add or edit an issue comment/note | Write | Required | P1 | Low | Candidate |
+| Merge requests | Edit or resolve discussion threads | Write | Required | P2 | Medium | Candidate |
+| Merge requests | Approve or unapprove an MR | Write | — | — | High | Prohibited; human-only |
+| Merge requests | Merge an MR | Write | Separate approval required | P2 | High | Accepted, subject to GitLab merge checks |
+| Merge requests | Close or reopen an MR | Write | Required | P1 | Medium | Candidate |
+| Issues | List/search/inspect issues | Read | No | P1 | — | Candidate |
+| Issues | Read notes, discussions, labels, milestones, and relationships | Read | No | P1 | — | Candidate |
+| Issues | Create/update/close issues or add comments | Write | Required | P1 | Low–Medium | Candidate |
 | Issues | Delete an issue | Write | Required | Deferred | High | Excluded pending separate review |
-| CI/CD | Read pipeline status and metadata | Read | No | P1 | — | Candidate |
-| CI/CD | List jobs and read job metadata | Read | No | P1 | — | Candidate |
-| CI/CD | Read job logs/traces | Read | No | P2 | — | Review; logs may contain secrets |
-| CI/CD | Download job artifacts | Read | No | P2 | — | Review; artifacts may contain sensitive data |
-| CI/CD | Trigger a pipeline | Write | Required | P2 | High | Review; variables and execution context must be previewed |
-| CI/CD | Retry or cancel a pipeline/job | Write | Required | P2 | Medium | Review |
-| CI/CD | Read CI/CD variable names and metadata | Read | No | Deferred | — | Excluded from initial scope |
-| CI/CD | Read secret variable values or manage variables | Write/Read | Required for mutations | Deferred | High | Excluded from initial scope |
-| Project governance | Read protected branch/tag rules and project settings relevant to safe writes | Read | No | P1 | — | Candidate |
-| Project governance | Change protected refs, project visibility, membership, access controls, hooks, or settings | Write | Required | Deferred | High | Excluded pending separate review |
+| CI/CD | Read pipeline status and metadata | Read | No | P1 | — | Accepted |
+| CI/CD | Read job status and metadata | Read | No | P1 | — | Accepted |
+| CI/CD | Read job logs/traces | Read | No | — | — | Deferred; excluded from first release |
+| CI/CD | Download job artifacts | Read | No | — | — | Deferred; excluded from first release |
+| CI/CD | Trigger a pipeline | Write | — | — | High | Excluded from first release |
+| CI/CD | Retry/cancel a pipeline or job | Write | — | — | Medium | Excluded from first release |
+| CI/CD | Read or change CI/CD variables | Read/Write | — | — | High | Excluded from first release |
+| Project governance | Read branch protection and merge-readiness information needed for safe operations | Read | No | P1 | — | Accepted where available |
+| Project governance | Change project settings, visibility, membership, hooks, or access controls | Write | Required | Deferred | High | Excluded pending separate review |
 | Releases | List and inspect releases | Read | No | P2 | — | Candidate |
-| Releases | Create or update releases/tags | Write | Required | P2 | High | Review |
-| Wiki | Read and search project wiki | Read | No | P2 | — | Candidate |
-| Wiki | Create or update wiki pages | Write | Required | P2 | Medium | Review |
+| Releases | Create/update releases or tags | Write | Required | P2 | High | Candidate |
+| Wiki | Read/search project wiki | Read | No | P2 | — | Candidate |
+| Wiki | Create/update wiki pages | Write | Required | P2 | Medium | Candidate |
 
-## Recommended safe development workflow (Proposed)
+## Accepted repository code workflow
 
-For code changes, the recommended default is:
+All repository code changes must follow this sequence:
 
-1. Read the target project, current branch, and relevant files.
-2. Create or select a dedicated working branch based on an explicitly identified ref.
-3. Prepare a complete change set and show a preview/diff.
-4. Obtain explicit approval for the exact commit operation.
-5. Commit changes only to the working branch.
-6. Prepare a merge request and show its title, description, source, target, and options.
-7. Obtain a separate approval before creating the merge request.
-8. Leave merging to a separately approved action; merging is not implied by approval to create or update an MR.
+1. Resolve the project and confirm it is in the local allowlist.
+2. Read the target project, current branch, protected-branch rules, and relevant files.
+3. Create or use a dedicated working branch based on an explicitly identified base ref.
+4. Prepare the complete change set and present a diff/preview.
+5. Obtain explicit approval for the branch creation or selection mutation, if a new branch is created.
+6. Obtain explicit approval for each commit operation, including its complete file actions and commit message.
+7. Create a merge request from the working branch, with an explicit target branch and a separate approval.
+8. Do not write directly to the default branch or any protected branch.
 
-This workflow is a proposal, not an accepted restriction yet. Direct writes to protected/default branches should remain disabled unless a later decision explicitly allows them.
+Approval of a branch, commit, or merge request creation does not authorize any subsequent operation.
+
+## Accepted merge policy
+
+MCP may merge a merge request, but only as a distinct high-impact operation with its own explicit approval.
+
+Before requesting approval, the MCP must:
+- Confirm the project is allowlisted.
+- Confirm the merge request belongs to the allowlisted project.
+- Read the current MR state, source branch/head, target branch, and merge readiness.
+- Read approval state and relevant pipeline status where available.
+- Identify whether the MR is draft, conflicted, blocked, or otherwise not mergeable.
+- Display the exact project, MR IID, source/target refs, current source HEAD SHA, and merge options.
+- Clearly state that GitLab's own authorization, branch protection, approval rules, CI requirements, and merge checks remain authoritative.
+
+The merge operation must have a separate, single-use approval. Any material change to the MR or merge parameters invalidates the approval and requires a new preview. The MCP must not attempt to bypass a GitLab rejection or policy gate.
+
+## Accepted human-only MR approval policy
+
+- MCP may read merge request approval status and applicable rules where available.
+- MCP must not expose approve, unapprove, or reset-approval write tools.
+- A human reviewer must perform approval in the GitLab UI or another explicitly human-operated GitLab workflow.
+- Merge approval in ChatGPT is not an MR review approval and must never be represented as one.
+
+## Accepted CI/CD scope
+
+The first release is read-only for CI/CD:
+- Read pipeline metadata/status.
+- Read job metadata/status.
+
+The first release must not:
+- Trigger, retry, or cancel pipelines/jobs.
+- Fetch job logs/traces.
+- Download job artifacts.
+- Read secret CI/CD variable values or modify CI/CD variables.
+
+Job logs and artifacts are deferred until a separate review defines redaction, size limits, and sensitive-data handling.
 
 ## Approval contract for all write capabilities
 
-Approval is required per mutation, not once per session or per conversation.
+Approval is required per mutation, not once per session or conversation.
 
 An approval preview should contain, as applicable:
-- GitLab instance alias (never expose internal hostnames in public logs or documentation).
-- Project identity and project path.
+- A safe project identifier and project path.
 - Operation name and target resource.
 - Source and target branches/refs.
-- Full file paths and content diff, for repository changes.
-- Commit message and all commit actions.
+- Full file paths and content diff for repository changes.
+- Commit message and complete commit actions.
 - MR/issue fields and all labels, assignees, reviewers, or milestones being changed.
-- CI/CD pipeline, ref, job, and non-secret variables, where relevant.
-- Warnings for protected refs, destructive operations, and irreversible side effects.
+- For merge: MR IID, source/target refs, current source HEAD SHA, merge method/options, and readiness warnings.
 
-Approval must be bound to the exact operation and parameters, be single-use, and expire. Any parameter change requires a new approval. The execution path must reject a mutation without valid approval. Host-level confirmation UX and server-side enforcement are separate design concerns and both must be evaluated.
+Approval must be bound to the exact operation and parameters, be single-use, and expire. Any parameter change requires new approval. The execution path must reject a mutation without valid approval. Host-level confirmation UX and server-side enforcement are separate design concerns and both must be evaluated.
 
 ## Cross-cutting constraints
 
-- Use project IDs internally after resolving an unambiguous project path; do not confuse global resource IDs with project-scoped IIDs.
+- Enforce the local project allowlist server-side for every project-scoped read and write.
+- Resolve project paths to canonical IDs before authorization checks.
 - Correctly URL-encode namespaced project paths, branch/tag names, and repository file paths.
+- Distinguish project-global IDs from project-scoped IIDs.
 - Implement pagination and bounded response sizes.
 - Respect GitLab rate limits and do not blindly retry non-idempotent writes.
-- Use optimistic concurrency checks for file updates where supported (for example, last known commit IDs).
-- Check branch protection and the authenticated user's actual permissions before presenting a write as executable.
-- Treat repository files, issue descriptions, MR descriptions, comments, and job logs as untrusted data, not as instructions to the agent.
-- Do not return secret variable values, access tokens, private keys, or session credentials.
-- Report edition, version, instance-configuration, or permission limitations explicitly.
+- Use optimistic concurrency checks for file updates where supported.
+- Check branch protection, permissions, merge readiness, and approval state before relevant operations.
+- Treat repository files, issue descriptions, MR descriptions, comments, and returned metadata as untrusted data, not instructions.
+- Do not return secret variables, access tokens, private keys, or session credentials.
+- Report version, edition, instance-configuration, or permission limitations explicitly.
+- Target GitLab Self-Managed 18.x and REST API v4; validate behavior against the exact installed minor/patch version and edition.
 
-## Decisions still required from the user
+## Remaining design questions
 
-1. **Project scope:** Should the MCP server access every project visible to the GitLab identity, or only an explicit project/group allowlist? Recommended: explicit allowlist.
-2. **Code write strategy:** Should all code changes be made on a dedicated working branch and proposed through an MR? Recommended: yes; no direct writes to protected/default branches.
-3. **Merge authority:** Should merge operations be supported at all, or should the user always merge manually in GitLab? Recommended for initial release: manual merge only.
-4. **Approval action:** Should the MCP be allowed to approve MRs, or should approvals remain a human-only governance action? Recommended: human-only.
-5. **CI/CD execution:** Should pipeline trigger/retry/cancel be supported in the first release? Recommended: read-only CI/CD initially.
-6. **Sensitive operational data:** Should job logs and artifacts be available? Recommended: defer until redaction and data-handling behavior is defined.
-7. **GitLab compatibility:** Which self-managed GitLab version and edition must be supported? This is needed before fixing endpoint-level support.
+The following are not resolved by the accepted decisions above:
+1. Exact GitLab 18.x minor/patch release and edition on the company instance.
+2. Whether project allowlist entries will use numeric project IDs only or permit namespaced paths at configuration time (runtime authorization should use canonical IDs).
+3. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
+4. Whether direct file deletion/move operations should be included in initial code-writing tools.
+5. Which GitLab search endpoints and search capabilities are enabled on the target instance.
+6. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
 
 ## Official GitLab API references
 
-- [REST API overview, pagination, encoding, and IDs](https://docs.gitlab.com/api/rest/)
-- [REST API resources index](https://docs.gitlab.com/api/api_resources/)
+- [REST API overview](https://docs.gitlab.com/api/rest/)
 - [Projects API](https://docs.gitlab.com/api/projects/)
 - [Repository files API](https://docs.gitlab.com/api/repository_files/)
 - [Branches API](https://docs.gitlab.com/api/branches/)
+- [Protected branches API](https://docs.gitlab.com/api/protected_branches/)
 - [Commits API](https://docs.gitlab.com/api/commits/)
 - [Merge requests API](https://docs.gitlab.com/api/merge_requests/)
+- [Merge request approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [Issues API](https://docs.gitlab.com/api/issues/)
 - [Notes API](https://docs.gitlab.com/api/notes/)
 - [Pipelines API](https://docs.gitlab.com/api/pipelines/)
