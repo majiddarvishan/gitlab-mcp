@@ -40,6 +40,11 @@ The project is documentation-first. No implementation is approved until the requ
 | CI/CD | Read pipeline/job metadata and status only |
 | Job logs/artifacts | Deferred, excluded from first release |
 | Write safety | Explicit approval for every mutation |
+| GitLab authentication | User's Personal Access Token; actions are attributed to the user's human GitLab account |
+| Token scope | api for the combined read/write REST API workflow |
+| Token resource reach | All projects/groups accessible to the PAT owner; the MCP allowlist is enforced separately server-side |
+
+The selected PAT is not project-scoped. Its effective reach follows the user's GitLab memberships and permissions; therefore, the MCP allowlist is a mandatory server-side control, not a restriction on the token itself. GitLab audit history attributes MCP operations to the PAT owner's human account rather than a bot identity. See [ADR-0015](docs/decisions/0015-gitlab-token-and-execution-identity.md) and the [authentication model](docs/security/authentication-model.md).
 
 ## GitLab Free 18.8 constraints
 
