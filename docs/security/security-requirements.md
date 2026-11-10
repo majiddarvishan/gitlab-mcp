@@ -32,7 +32,7 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 - The execution layer must reject writes without valid approval.
 - Merge operations require both at least one verified human approval recorded in GitLab and a separate, exact-operation MCP user approval.
 - Verify approver identities as regular human accounts using GitLab's user metadata; reject bots/internal accounts.
-- The qualifying GitLab reviewer must be a regular human account distinct from both the PAT owner (MCP execution identity) and the MR author. This rule is accepted by the user; SEC-009 must validate the target API's identity metadata. Keep MCP merge disabled until the rule can be enforced reliably.
+- The qualifying GitLab reviewer must be a regular human account distinct from both the PAT owner (MCP execution identity) and the MR author. This rule is accepted by the user; SEC-009 must validate the target API's identity metadata using the [reviewer verification protocol](reviewer-verification.md). Do not rely on bot=false or exclude_internal=true alone unless target-instance tests prove the classification is sufficient. Keep MCP merge disabled until the rule can be enforced reliably.
 - Re-read approval state and MR head immediately before merge; fail closed if approval is absent, stale, or ambiguous.
 - Human merge-request approval is outside MCP authority. MCP must not expose approve, unapprove, or reset-approval mutations.
 - GitLab authorization, branch protections, merge checks, and approval rules must remain authoritative.
