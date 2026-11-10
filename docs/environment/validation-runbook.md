@@ -125,11 +125,13 @@ The version-tagged v18.8.4-ee PAT documentation states:
 - The default maximum lifetime on Free is 365 days.
 - A 400-day maximum can be enabled in GitLab 17.6 and later by the `buffered_token_expiration_limit` feature flag; it is disabled by default. Confirm whether the target administrator enabled it.
 - A PAT expires at midnight UTC on its expiry date.
-- The Rotate UI workflow has been available since GitLab 17.7. Rotation creates fresh credentials, preserves the old token's scope and permissions, and immediately invalidates the old token.
+- The Rotate UI workflow has been available since GitLab 17.7. Rotation creates fresh credentials, preserves the old token's scope and permissions, and immediately invalidates the old token. It does not provide an overlap window for validating the replacement.
 
 Before provisioning, confirm the actual token-creation UI/instance settings and choose an expiry date. Define the local renewal owner and reminder process.
 
-Do not place the PAT in chat, source control, a plain text config file, shell history, process arguments, or logs. Token creation and rotation must follow the accepted local secret-storage decision. Revoke a compromised token immediately. Use the GitLab Rotate flow for planned renewal only after SEC-002 defines safe credential replacement and storage; a rotated/revoked token cannot continue authenticating.
+Do not place the PAT in chat, source control, a plain text config file, shell history, process arguments, or logs. Token creation and replacement must follow the accepted local secret-storage decision.
+
+For planned renewal without downtime, create a second PAT (GitLab allows multiple PATs), store and validate it, switch the local client to it, and then revoke the old PAT. Do not use the GitLab Rotate UI when an overlap/validation window is required: that action invalidates the old token immediately. For a compromised token, revoke it immediately and accept the interruption while a replacement is provisioned. A revoked or rotated token cannot continue authenticating.
 
 ## 7. Sanitized result template
 
