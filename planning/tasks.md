@@ -190,6 +190,27 @@ These tasks must be completed before implementation can be considered. They are 
 
 ---
 
+
+## SEC-009 — Verify human approver identity on GitLab Free
+
+- **Priority:** P0
+- **Status:** OPEN
+- **Depends on:** DES-001, SEC-001
+- **Related decision:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md)
+
+**Work**
+- Confirm the exact Free 18.8 CE/EE response from the MR approvals endpoint.
+- Verify the `approved_by` user IDs can be resolved through the GitLab Users API.
+- Confirm the returned user metadata identifies bot/internal accounts reliably (for example, the `bot` field or a supported `humans` filter).
+- Define how to handle missing, inaccessible, blocked, or ambiguous user records.
+- Ensure the MCP execution identity cannot be mistaken for an independent automation bot approval.
+
+**Acceptance criteria**
+- At least one human approver can be distinguished from bot/internal users using fields available on the target instance.
+- The behavior is verified against the company's exact patch and CE/EE distribution.
+- If a human cannot be verified, merge is denied.
+- The result is documented without publishing user IDs, usernames, or internal URLs.
+
 # Phase 1 — Security and architecture design
 
 These tasks define the security boundary before code is authorized.
@@ -286,7 +307,7 @@ These tasks define the security boundary before code is authorized.
 
 - **Priority:** P0
 - **Status:** BLOCKED
-- **Depends on:** SEC-004, DES-008, DES-011
+- **Depends on:** SEC-004, DES-008, DES-011 (complete), SEC-009
 
 **Work**
 - Define the fields shown before merge approval: project, MR IID, source/target refs, current source HEAD SHA, merge method/options, readiness, approvals, and pipeline state.
@@ -668,7 +689,9 @@ These tasks define the security boundary before code is authorized.
 
 **Acceptance criteria**
 - Draft, closed, conflicted, blocked, stale, and non-mergeable MRs are handled safely.
-- Missing human approval or required CI status is never bypassed.
+- Missing human GitLab approval or separate MCP merge approval always blocks merge.
+- Bot/internal approvals do not satisfy the human-approval gate.
+- GitLab policy requirements are never bypassed.
 - Merge approval cannot be reused after MR state changes.
 - GitLab rejection is treated as final for that attempt.
 
@@ -783,7 +806,7 @@ These tasks define the security boundary before code is authorized.
 The next tasks to work through, in order, are:
 
 1. **DES-001** — Obtain exact 18.8 patch and CE/EE distribution; Free tier and 18.8 minor are confirmed.
-2. **DES-011** — Decide whether MCP must enforce at least one human MR approval before merging.
+2. **SEC-009** — Verify that GitLab Free 18.8 exposes enough metadata to distinguish a human MR approver from bot/internal accounts.
 3. **SEC-001 / SEC-002** — Decide GitLab identity, token type, and secure local credential storage.
 4. **SEC-003** — Finalize local project allowlist format and administration.
 5. **SEC-004 / SEC-005** — Finalize trusted user approval interaction and its server-side enforcement.
@@ -834,15 +857,18 @@ No implementation task is authorized by this backlog. Implementation remains blo
 ## DES-011 — Decide whether MCP must require human MR approval before merge
 
 - **Priority:** P0
-- **Status:** OPEN
-- **Depends on:** ADR-0014 (Proposed)
-- **Reference:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md)
+- **Status:** DONE
+- **Depends on:** User decision
+- **Evidence:** [ADR-0014 — Accepted](../docs/decisions/0014-free-tier-human-approval-merge-gate.md)
 
-**Work**
-- Decide whether separate MCP merge approval is sufficient, or whether at least one human MR approval in GitLab must also be present.
-- If requiring human approval, validate whether the Free-tier API and deployed CE/EE distribution can identify an eligible human approver reliably.
-- Keep MCP approval to merge distinct from GitLab's human code-review approval.
+**Decision recorded**
+- Require at least one verified human approval recorded in GitLab.
+- Require a separate, exact-operation user approval through MCP before executing the merge.
+- Never let MCP create or modify the human review approval.
 
 **Acceptance criteria**
-- ADR-0014 is Accepted, Rejected, or Superseded based on an explicit user decision.
-- Merge preflight and tests reflect the selected policy.
+- ADR-0014 is Accepted.
+- Merge preflight and test requirements reflect both independent approval conditions.
+
+**Follow-up technical validation**
+- Verify that the deployed Free 18.8 CE/EE distribution exposes enough user metadata to identify bot/internal accounts. Tracked separately by SEC-009.
