@@ -11,7 +11,7 @@ The local MCP server uses GitLab REST API v4 for reads and approved mutations. I
 
 The user selected a Personal Access Token (PAT) belonging to their existing human GitLab account. MCP operations will therefore be attributed in GitLab to that human account, not to a project bot or service identity.
 
-GitLab v18.8.4-ee does not provide fine-grained personal access token permissions. A PAT's effective resource reach follows the owning user's GitLab access and the token scopes; the token is not intrinsically restricted to one project.
+GitLab v18.8.4-ee does not provide fine-grained personal access token permissions. The selected `api` scope grants complete read/write API access across the owning user's accessible groups and projects, as well as additional API surfaces such as registries/packages. A PAT's effective resource reach follows the owning user's GitLab access and the token scopes; the token is not intrinsically restricted to one project.
 
 ## Decision
 
@@ -45,7 +45,7 @@ A GitLab approval record identifies an account; it does not, by itself, prove wh
 - The reviewer must be different from the MR author.
 - Bot/internal accounts and missing, stale, inaccessible, or ambiguous identities never satisfy the human-review gate.
 
-SEC-009 must validate that the target GitLab Free 18.8 CE/EE API exposes enough identity metadata to enforce this rule. Until that validation is complete and the implementation can fail closed, MCP merge remains unavailable.
+SEC-009 must validate that the target GitLab EE v18.8.4 API exposes enough identity metadata to enforce this rule. Until that validation is complete and the implementation can fail closed, MCP merge remains unavailable.
 
 ## Alternatives considered
 
@@ -55,6 +55,8 @@ SEC-009 must validate that the target GitLab Free 18.8 CE/EE API exposes enough 
 4. **OAuth 2.0 delegated token.** Not selected. It introduces OAuth application and token-refresh lifecycle complexity and does not match the selected PAT approach.
 
 ## Consequences
+
+The version-tagged v18.8.4-ee PAT documentation is referenced in the [authentication model](../security/authentication-model.md). Its Free-tier expiry baseline is a 365-day maximum by default, with a 400-day option controlled by the `buffered_token_expiration_limit` feature flag.
 
 ### Benefits
 
@@ -68,7 +70,7 @@ SEC-009 must validate that the target GitLab Free 18.8 CE/EE API exposes enough 
 - Compromise of the PAT or local MCP process may expose or mutate any resource the account can access, not only allowlisted projects.
 - The MCP allowlist cannot protect GitLab from use of the PAT outside the MCP process; it only constrains MCP's own authorization path.
 - GitLab audit records for MCP operations are attributed to the human PAT owner, so they do not distinguish MCP-originated activity from other activity by that user without additional MCP-side audit records.
-- The api scope is broad and GitLab v18.8.4-ee does not provide fine-grained PAT permissions to narrow it to specific endpoints.
+- The `api` scope is broad: it includes all API resources available to the owner, including accessible groups/projects and registry/package-related API surfaces. GitLab v18.8.4-ee does not provide fine-grained PAT permissions to narrow it to specific endpoints.
 - The user's existing project roles may be too weak for some operations (especially protected-branch merge) or broader than necessary. MCP must not elevate them automatically.
 - The PAT is a single credential dependency; expiration or revocation interrupts MCP access to all configured projects.
 
