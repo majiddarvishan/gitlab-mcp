@@ -14,7 +14,7 @@ Approved scope baseline for design. Detailed tool schemas and endpoint mapping r
 - List configured/allowlisted projects.
 - Read project metadata and repository tree.
 - Read files at a specified branch, tag, or commit.
-- Search code and repository text where supported by the target GitLab instance.
+- Search code within one allowlisted project using Free-tier basic project search, subject to validation against the installed 18.8 API. Advanced/exact and global/group code search are outside the Free-tier baseline.
 - List branches and tags, including default/protected status where available.
 - Inspect commits and compare refs.
 - Inspect merge requests, diffs, discussions, changed files, and approval state.
@@ -55,7 +55,7 @@ Approved scope baseline for design. Detailed tool schemas and endpoint mapping r
 
 ## Compatibility
 - Target GitLab Self-Managed 18.x using REST API v4.
-- Exact minor/patch version, edition, enabled features, and effective user permissions must be checked during environment validation.
+- GitLab Free 18.8 is confirmed. Exact patch, CE/EE distribution, enabled features, and effective user permissions must be checked during environment validation.
 - Unsupported features must be reported clearly and must not silently fall back to a broader operation.
 
 ## Configuration
