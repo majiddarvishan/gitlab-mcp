@@ -30,32 +30,30 @@ A task is complete only when its acceptance criteria are satisfied and the relev
 
 These tasks must be completed before implementation can be considered. They are documentation, investigation, and decision tasks; they do not authorize coding.
 
-## DES-001 — Identify the exact GitLab 18.x environment
+## DES-001 — Identify the exact GitLab environment
 
 - **Priority:** P0
-- **Status:** BLOCKED (partially confirmed)
-- **Depends on:** Exact patch and CE/EE distribution string
+- **Status:** DONE
+- **Depends on:** User-provided environment facts
 - **Owner:** User provides instance facts; project records sanitized result
 - **Reference:** [GitLab target environment profile](../docs/environment/gitlab-target.md); [validation runbook](../docs/environment/validation-runbook.md)
+- **Evidence:** User supplied the exact Help-page version line and the matching public GitLab release tag.
 
 **Confirmed**
-- Self-Managed, GitLab Free tier, version 18.8.
+- Offering: GitLab Self-Managed.
+- Distribution: Enterprise Edition (EE).
+- Subscription tier: Free.
+- Exact version: 18.8.4-ee.
+- Public tag: [v18.8.4-ee](https://gitlab.com/gitlab-org/gitlab/-/tags/v18.8.4-ee).
 
-**Still required**
-- Exact patch version (for example, 18.8.0 or 18.8.6).
-- CE or EE distribution, because some API response fields can differ.
-
-**Work**
-- Use GitLab's authenticated **Help > Help** page; read the version/distribution string at the top.
-- Record only the version/distribution text; do not publish internal URL, hostname, IP, project names, user identifiers, or credentials.
+**Important distinction**
+- EE is the installed distribution; Free is the active subscription tier.
+- The EE approval response schema includes edition-specific fields even without a paid license, but paid-tier-only endpoints and approval-rule features remain out of scope.
 
 **Acceptance criteria**
-- A sanitized environment profile records exact patch and distribution.
+- Exact patch, distribution, and subscription tier are recorded in sanitized form.
 - The profile contains no private network identifiers or credentials.
-- Any capability unavailable in the target instance is marked unsupported or conditional in the capability matrix.
-
-**Unblock requirement**
-- Provide only the version/distribution line, for example `GitLab Enterprise Edition 18.8.6`. Do not provide the page URL or hostname.
+- Version-sensitive behavior remains subject to target-instance API validation; environment identification alone does not complete SEC-009, DES-008, or DES-009.
 
 ## DES-002 — Verify ChatGPT Desktop and Codex local MCP compatibility
 
@@ -195,7 +193,7 @@ These tasks must be completed before implementation can be considered. They are 
 
 - **Priority:** P0
 - **Status:** OPEN
-- **Depends on:** DES-001, SEC-001
+- **Depends on:** SEC-001 (DES-001 complete)
 - **Reference:** [SEC-009 reviewer verification test protocol](../docs/security/reviewer-verification.md); [target-instance validation runbook](../docs/environment/validation-runbook.md)
 - **Related decisions:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
@@ -314,7 +312,7 @@ These tasks must be completed before implementation can be considered. They are 
 - Maximum lifetime enforcement can depend on edition and instance configuration; do not assume Ultimate-only administrator settings exist on a Free target.
 
 **Work**
-- Confirm PAT expiration defaults and maximum lifetime enforced by the target instance.
+- Confirm whether the `buffered_token_expiration_limit` feature flag is enabled. The v18.8.4-ee PAT documentation states a 365-day default/max lifetime for Free, with a 400-day limit available from 17.6 via that flag; token expiry occurs at midnight UTC.
 - Define renewal, replacement, and immediate revocation for the single user PAT.
 - Verify the MCP can distinguish expired, revoked, rotated, and under-scoped tokens without exposing token values.
 - Document that rotation/revocation affects MCP access to all configured projects because one PAT is used.
