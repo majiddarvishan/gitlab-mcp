@@ -26,6 +26,9 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Select and document MCP SDK.
 - [ ] Define tool naming, input schemas, and response contracts.
 - [ ] Define local project allowlist format and administration workflow.
+- [ ] Decide GitLab token type, execution identity, and required project role (SEC-001 / ADR-0015).
+- [ ] Validate Project Access Token resource boundary and internal-visibility behavior (SEC-010).
+- [ ] Validate Developer versus Maintainer permissions for protected-branch merge (SEC-011).
 - [ ] Define configuration and credential storage.
 - [ ] Define approval lifecycle, merge preflight checks, and failure behavior.
 - [x] Confirm GitLab Free tier and 18.8 minor version.
