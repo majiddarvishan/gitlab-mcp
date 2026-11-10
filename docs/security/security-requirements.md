@@ -6,7 +6,7 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 ## Credentials
 - Use the Personal Access Token (PAT) belonging to the user's selected human GitLab account, as recorded in Accepted ADR-0015.
 - The PAT inherits the owning user's effective GitLab permissions and can reach all projects/groups that user can access, subject to token scopes and GitLab policy. It is not scoped to one allowlisted project.
-- Use only the api scope for the initial combined read/write REST API workflow. GitLab 18.8 does not provide fine-grained PAT endpoint permissions; do not add unrelated scopes.
+- Use only the api scope for the initial combined read/write REST API workflow. GitLab v18.8.4-ee does not provide fine-grained PAT endpoint permissions. The `api` scope is complete read/write API access across the user's accessible groups/projects and additional API surfaces; do not add unrelated scopes.
 - Review the PAT owner's group memberships and per-project roles before provisioning. Prefer the least-privileged practical account and do not elevate roles or weaken protected-branch rules to accommodate MCP.
 - Enforce the explicit canonical project allowlist inside MCP on every read and write, including nested and cross-project references. The allowlist constrains MCP behavior but does not restrict direct use of a leaked PAT.
 - Store the PAT in an OS-native secret store where practical. Do not put it in source control, ordinary configuration, command-line arguments, MCP tool arguments, model-visible output, environment dumps, crash reports, or logs.
