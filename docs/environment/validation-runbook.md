@@ -68,11 +68,10 @@ Inspect `approved_by`; for each entry, record locally the nested user ID and use
 
 For each candidate:
 
-1. Call `GET /api/v4/users/:id` as a regular authenticated user. Confirm the returned numeric ID matches the candidate. Inspect `bot` and `state`. A missing or contradictory field fails classification.
-2. Call `GET /api/v4/users?username=:username&humans=true&active=true`. Confirm the result contains exactly the candidate's numeric ID. The `humans` filter is documented to include regular users and exclude bot and internal users.
-3. If the returned list exposes `locked`, it must be `false`. If the required identity or state information is absent, ambiguous, or inconsistent, fail closed.
-4. Do not use `exclude_internal=true` alone: GitLab documents that it does not exclude project/group bot users.
-5. Validate all of the above on the exact 18.8 patch. Current documentation lists `humans`, but does not state its introduction version; do not infer 18.8 support from the current page alone.
+1. Call `GET /api/v4/users/:id` as a regular authenticated user (the regular-user endpoint does not require administrator privileges). Confirm the returned numeric ID matches the candidate. Inspect `bot`, `state`, and `locked`; require `bot=false`, `state=active`, and `locked=false`.
+2. Call `GET /api/v4/users?username=:username&humans=true&active=true`. Confirm the result contains exactly the candidate's numeric ID. The `humans` filter excludes bot and internal users; `active=true` limits results to active users.
+3. The REST `humans` filter was added in GitLab 17.3 (Merge Request [!159200](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/159200), milestone 17.3), so it predates v18.8.4-ee. Still verify its behavior on the actual target instance.
+4. Do not use `exclude_internal=true` alone: GitLab documents that it does not exclude project/group bot users. If the filter is rejected, ignored, or inconsistent, fail closed.
 
 Compare numeric user IDs, not names or usernames:
 - Candidate reviewer ID must differ from the PAT owner ID.
@@ -138,7 +137,7 @@ Use this template in a private worksheet first. Publish only fields marked safe.
 | `approved_by` available | PASS / FAIL |
 | `GET /users/:id` available to regular user | PASS / FAIL |
 | `bot` and `state` fields present | PASS / FAIL |
-| `humans=true` accepted on target instance | PASS / FAIL |
+| `humans=true` filter behaves as documented (introduced in 17.3) | PASS / FAIL |
 | Regular human appears in humans filter | PASS / FAIL |
 | Project/group/internal bot excluded | PASS / FAIL |
 | PAT owner and MR author ID comparisons | PASS / FAIL only |
