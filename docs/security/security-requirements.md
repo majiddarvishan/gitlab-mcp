@@ -24,7 +24,9 @@ The MCP server bridges a cloud-connected AI client and a private GitLab service.
 - The preview must include project, target ref, action, and complete material parameters.
 - Approval expires after use and is invalidated by any parameter change.
 - The execution layer must reject writes without valid approval.
-- Merge operations require a separate approval and a fresh preflight check.
+- Merge operations require both at least one verified human approval recorded in GitLab and a separate, exact-operation MCP user approval.
+- Verify approver identities as regular human accounts using GitLab's user metadata; reject bots/internal accounts.
+- Re-read approval state and MR head immediately before merge; fail closed if approval is absent, stale, or ambiguous.
 - Human merge-request approval is outside MCP authority. MCP must not expose approve, unapprove, or reset-approval mutations.
 - GitLab authorization, branch protections, merge checks, and approval rules must remain authoritative.
 - A failed GitLab policy check must not be worked around by changing API parameters or switching to a more privileged operation.
