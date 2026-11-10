@@ -1,7 +1,7 @@
 # SEC-009 Test Protocol: Independent Human Reviewer Verification
 
 - **Status:** Test procedure defined; target-instance validation pending
-- **Target:** GitLab Self-Managed Free 18.8
+- **Target:** GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
 - **Related tasks:** SEC-009, DES-001
 - **Related decisions:** [ADR-0014](../decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../decisions/0015-gitlab-token-and-execution-identity.md)
 - **Last reviewed:** 2026-11-10
