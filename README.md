@@ -62,6 +62,8 @@ The following choices remain Proposed and are not implementation commitments yet
 - Primary local transport: STDIO.
 - GitLab integration: REST API v4.
 
+Existing GitLab MCP implementations are under a documentation-only security evaluation (DES-012). No upstream code has been selected or adopted; see [the evaluation](docs/research/existing-gitlab-mcp-evaluation.md).
+
 See [Authentication Model](docs/security/authentication-model.md), [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Client Compatibility](docs/architecture/client-compatibility.md), [GitLab Environment Profile](docs/environment/gitlab-target.md), [Detailed Task Backlog](planning/tasks.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
 
 ## Important data-handling note
