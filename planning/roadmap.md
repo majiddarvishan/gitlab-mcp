@@ -18,7 +18,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Review and accept implementation language.
 - [ ] Review and accept MCP transport.
 - [ ] Finalize exact capability inventory and tool contracts.
-- [ ] Finalize detailed security and approval model; validate PAT account permissions and independent reviewer identity.
+- [ ] Complete target-instance security validation: PAT permissions, allowlist isolation, and independent human reviewer identity.
 - [x] Review official ChatGPT Desktop and Codex local MCP compatibility; see [client compatibility](../docs/architecture/client-compatibility.md).
 - [ ] Run local MCP runtime smoke test on the target workstation (TST-009).
 
@@ -37,7 +37,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Review 18.8 maintenance status and document upgrade plan/risk acceptance (DES-010).
 - [ ] Validate Free-tier project-level code search API (DES-009).
 - [x] Require a verified human GitLab MR approval plus separate MCP merge approval (DES-011 / ADR-0014).
-- [ ] Verify independent human approver identity metadata on the exact Free 18.8 CE/EE instance (SEC-009); reviewer must differ from PAT owner and MR author.
+- [ ] Run [SEC-009 reviewer verification protocol](../docs/security/reviewer-verification.md) on the exact Free 18.8 CE/EE instance; reviewer must differ from PAT owner and MR author.
 - [ ] Define API compatibility tests against the target GitLab 18.x instance.
 
 ## Phase 2 — Implementation (not authorized yet)
