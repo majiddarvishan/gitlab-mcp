@@ -216,7 +216,7 @@ These tasks must be completed before implementation can be considered. They are 
 
 - **Priority:** P0
 - **Status:** DONE
-- **Depends on:** DES-001, DES-006
+- **Depends on:** None (the user decision has been received)
 - **Reference:** [Authentication model](../docs/security/authentication-model.md)
 - **Related ADR:** [ADR-0015 (Accepted)](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
@@ -232,7 +232,7 @@ These tasks must be completed before implementation can be considered. They are 
 - ADR-0015 is Accepted and records the user's choice.
 - Token type, owner identity, effective resource reach, initial scope, and permission model are documented.
 - Credential handling and the broader PAT blast radius are recorded in the security requirements.
-- No credential is exposed to the model or repository.
+- No real credential is included in the repository or design artifacts; runtime secret isolation remains a pre-release validation requirement.
 
 **Follow-up validation**
 - SEC-010 validates PAT reach against the MCP allowlist.
