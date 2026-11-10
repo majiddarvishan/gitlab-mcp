@@ -1,55 +1,83 @@
 # ADR-0015: GitLab Token Type and Execution Identity
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-10
-- **Decision owner:** Pending user decision
+- **Decision owner:** User
 - **Target:** GitLab Self-Managed Free 18.8
 
 ## Context
 
-The local MCP server needs to read and mutate GitLab through REST API v4. It must access only explicitly allowlisted projects, create working branches/commits/MRs, inspect human MR approvals, and merge only after both a human GitLab approval and a separate MCP operation approval.
+The local MCP server uses GitLab REST API v4 for reads and approved mutations. It must access only explicitly allowlisted projects, create working branches/commits/MRs, inspect human MR approvals, and merge only after both a human GitLab approval and a separate MCP operation approval.
 
-GitLab 18.8 Free does not provide fine-grained personal access tokens or generally available Free service accounts. Project access tokens are available on GitLab Self-Managed Free.
+The user selected a Personal Access Token (PAT) belonging to their existing human GitLab account. MCP operations will therefore be attributed in GitLab to that human account, not to a project bot or service identity.
 
-## Options
+GitLab 18.8 does not provide fine-grained personal access token permissions. A PAT's effective resource reach follows the owning user's GitLab access and the token scopes; the token is not intrinsically restricted to one project.
 
-1. **Personal access token of the user's everyday account.** Easy to provision, but inherits all projects and permissions of that account. Not recommended.
-2. **Personal access token of a dedicated regular user.** Can be restricted by that user's memberships and roles, but a formal Free service account is not available as a standard 18.8 feature. It also requires lifecycle and account-governance handling.
-3. **One project access token per allowlisted project.** Project-scoped bot identity and independent revocation. Requires one token per project and a role decision. Recommended candidate.
-4. **Group access token.** Covers the group's projects/subgroups and is broader than the accepted per-project allowlist. Not recommended as the default.
-5. **OAuth 2.0 delegated user token.** Supports user-delegated API access but adds OAuth application setup and refresh-token lifecycle. Keep as an alternative if a user-delegated execution identity is preferred.
+## Decision
 
-## Proposal
+Use one Personal Access Token belonging to the user's chosen human GitLab account for MCP's GitLab REST API authentication.
 
-Use one Project Access Token per allowlisted project. Use the `api` scope for the combined read/write REST API workflow. Store each token securely and map it to the canonical project ID.
+The initial scope is api, because the first release includes both read and write REST API operations. Do not add unrelated scopes. read_api is insufficient for the approved write workflow, and write_repository does not authenticate REST API requests.
 
-Start with the Developer role for branch, commit, and MR work. Do not assume Developer can merge into a protected default branch. Validate the actual branch permissions. If MCP merge requires Maintainer, present the broader Maintainer project-bot permissions for explicit review; do not weaken protected branch rules to accommodate MCP.
+The token inherits the owning account's effective GitLab permissions. There is no separate per-token Developer/Maintainer role selection. The account's memberships and roles on each project, together with branch protections and instance policy, determine which operations GitLab accepts.
 
-The project bot identity must never be accepted as a human reviewer under ADR-0014.
+The MCP server must independently enforce the accepted canonical project allowlist on every project-scoped operation. The allowlist is an application authorization boundary; it does not narrow the PAT's underlying GitLab permissions.
 
-## Consequences if accepted
+## Operational and security constraints
 
-- Each allowlisted project has a distinct credential and bot actor.
-- Removing a project from the allowlist can revoke only that project's token.
-- MCP-created changes are attributed to the project bot, not the human workstation user.
-- The `api` scope grants broad API permissions within the token's scope; GitLab 18.8 does not provide fine-grained PAT scopes.
-- More than one project requires more than one token.
-- The target instance's internal-visibility behavior must be tested before relying on project token scope as the only credential-level boundary.
+- Store the PAT only in an OS-native secret store where practical. Never place it in source control, ordinary configuration, command-line arguments, MCP tool arguments, model-visible output, or logs.
+- The local MCP process is the only component that reads the PAT and attaches it to GitLab API requests.
+- Use the least-privileged practical human GitLab account. Review its memberships and project roles before provisioning the PAT; do not elevate roles or weaken branch protections merely to make MCP operations succeed.
+- Treat the PAT as a credential that can reach every project and group the owning account can access, subject to token scopes and GitLab authorization. The impact of PAT disclosure is therefore broader than any one MCP allowlist entry.
+- Keep the MCP allowlist mandatory for reads and writes, including nested resources and cross-project references. Deny unknown, ambiguous, and unlisted projects before returning their data or issuing mutations.
+- Use an expiration date, document renewal/rotation, and revoke the PAT immediately if it is exposed or no longer required.
+- GitLab activity will show the PAT owner's human account as the actor. Do not label or represent this activity as a bot identity.
+- The PAT owner must not be treated as an independent reviewer merely because GitLab records that account as a human user.
 
-## Consequences if rejected
+## Merge approval interaction
 
-A PAT or OAuth token can be selected instead, but its resource reach, account identity, and blast radius must be documented and mitigated.
+ADR-0014 remains in force: MCP merge requires both a verified human GitLab approval and a separate, exact-operation MCP user approval. MCP must not expose approve, unapprove, or reset-approval operations.
+
+A GitLab approval record identifies an account; it does not, by itself, prove whether the approval was entered through the GitLab UI or by an API client. Because MCP uses the PAT owner's human identity, the design should require the qualifying independent GitLab reviewer to be a regular human account distinct from both the PAT owner and the MR author. This additional identity-separation rule is a security proposal pending validation in SEC-009 and explicit confirmation; until it is resolved, MCP merge remains unavailable. Bot/internal accounts and ambiguous identities must never satisfy the human-review gate.
+
+## Alternatives considered
+
+1. **Project Access Token per allowlisted project.** Not selected. It provides a narrower bot identity and credential boundary, but the user chose their personal human identity instead.
+2. **A dedicated regular-user PAT.** Not selected. It would require a separate GitLab user and account governance; it is not the identity the user selected.
+3. **Group Access Token.** Not selected. Its resource reach is broader than the intended per-project authorization model.
+4. **OAuth 2.0 delegated token.** Not selected. It introduces OAuth application and token-refresh lifecycle complexity and does not match the selected PAT approach.
+
+## Consequences
+
+### Benefits
+
+- MCP actions are attributed to the user's existing GitLab identity.
+- Only one PAT must be provisioned and rotated for the initial setup.
+- No separate project bot identities need to be created or managed.
+
+### Risks and trade-offs
+
+- The PAT can reach all projects/groups available to its owner within its token scopes; it is not project-scoped.
+- Compromise of the PAT or local MCP process may expose or mutate any resource the account can access, not only allowlisted projects.
+- The MCP allowlist cannot protect GitLab from use of the PAT outside the MCP process; it only constrains MCP's own authorization path.
+- GitLab audit records for MCP operations are attributed to the human PAT owner, so they do not distinguish MCP-originated activity from other activity by that user without additional MCP-side audit records.
+- The api scope is broad and GitLab 18.8 does not provide fine-grained PAT permissions to narrow it to specific endpoints.
+- The user's existing project roles may be too weak for some operations (especially protected-branch merge) or broader than necessary. MCP must not elevate them automatically.
+- The PAT is a single credential dependency; expiration or revocation interrupts MCP access to all configured projects.
 
 ## Required validation
 
-- Verify project token behavior on the exact GitLab Free 18.8 CE/EE build.
-- Verify token access against one allowlisted project and one non-allowlisted project.
-- Verify Developer vs Maintainer behavior for working branch creation, commits, MR creation, approval-state reads, and MR merge.
-- Verify that the bot identity can be distinguished from a human reviewer.
-- Verify token expiry, rotation, and revocation behavior.
+- Confirm the PAT's effective permissions on the exact GitLab Free 18.8 CE/EE instance.
+- Verify that the MCP allowlist denies a project the PAT owner can access but has not explicitly allowlisted.
+- Verify branch, commit, MR, approval-read, and merge permissions for the user's actual role on each test project.
+- Verify the target API can identify a qualifying human reviewer distinct from the PAT owner and MR author; otherwise keep MCP merge disabled.
+- Verify token expiry, rotation, revocation, and secure local storage behavior.
+- Confirm that diagnostics and MCP tool outputs never expose the PAT.
 
 ## References
 
-- [GitLab Project Access Tokens](https://docs.gitlab.com/user/project/settings/project_access_tokens/)
+- [GitLab REST API authentication](https://docs.gitlab.com/api/rest/authentication/)
 - [GitLab access token scopes](https://docs.gitlab.com/security/tokens/access_token_scopes/)
+- [GitLab personal access tokens](https://docs.gitlab.com/user/profile/personal_access_tokens/)
+- [GitLab roles and permissions](https://docs.gitlab.com/user/permissions/)
 - [GitLab protected branch rules](https://docs.gitlab.com/user/project/repository/branches/protection_rules/)
