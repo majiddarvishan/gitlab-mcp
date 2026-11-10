@@ -1,7 +1,7 @@
 # Agent Instructions
 
 ## Project phase
-This repository is currently documentation-first. Do not add implementation code until the user explicitly approves the completed requirements and architecture baseline.
+This repository is currently documentation-first. Do not add implementation code until the user explicitly approves the completed requirements and architecture baseline. Track detailed work in `planning/tasks.md`; keep task IDs stable and update the backlog when task scope or status changes.
 
 ## Working rules
 - Treat Accepted ADRs as the source of truth. If an Accepted ADR is superseded, follow the newer ADR.
