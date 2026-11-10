@@ -24,6 +24,7 @@ Last updated: 2026-11-10
 | D-018 | Use one Project Access Token per allowlisted project | Rejected | Not selected; the user explicitly chose a Personal Access Token tied to their human GitLab account. |
 | D-019 | Use the user's Personal Access Token as the MCP execution identity | Accepted | GitLab actions are attributed to the user's human account; the token inherits that account's permissions and is not project-scoped. The MCP allowlist remains mandatory server-side enforcement. |
 | D-020 | Require an independent human GitLab reviewer before MCP merge | Accepted | The qualifying reviewer must be a regular human account distinct from both the PAT owner and MR author. MCP merge stays disabled until this can be verified on the target GitLab instance. |
+| D-021 | Use Linux Secret Service for local PAT storage | Proposed | Initial recommendation is the Secret Service D-Bus API in the same interactive desktop user session; requires user acceptance and local canary validation. See ADR-0016. |
 
 ## Decision process
 A proposal becomes Accepted only after explicit user agreement. Material changes should be recorded as a new ADR rather than silently changing an accepted decision.
