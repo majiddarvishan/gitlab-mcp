@@ -19,7 +19,7 @@ Last updated: 2026-11-10
 | D-013 | Keep MR approval human-only | Accepted | MCP may read approval state but must not approve or unapprove. |
 | D-014 | Keep CI/CD read-only in the first release | Accepted | Pipeline and job metadata/status only; no triggers, retries, or cancellation. |
 | D-015 | Defer job logs and artifacts | Accepted | Excluded from the first release pending data-handling review. |
-| D-016 | Target GitLab Self-Managed Free 18.8 | Accepted | REST API v4; exact patch and CE/EE distribution remain pending. |
+| D-016 | Target GitLab Self-Managed Free 18.8 | Accepted | Exact environment confirmed by user: Enterprise Edition v18.8.4-ee with Free subscription tier. REST API v4. Version-sensitive API behavior still requires target-instance tests. |
 | D-017 | Require human GitLab approval plus separate MCP approval before merge | Accepted | MCP requires one verified human approval recorded in GitLab and a separate operation-specific user confirmation. |
 | D-018 | Use one Project Access Token per allowlisted project | Rejected | Not selected; the user explicitly chose a Personal Access Token tied to their human GitLab account. |
 | D-019 | Use the user's Personal Access Token as the MCP execution identity | Accepted | GitLab actions are attributed to the user's human account; the token inherits that account's permissions and is not project-scoped. The MCP allowlist remains mandatory server-side enforcement. |
