@@ -191,89 +191,94 @@ These tasks must be completed before implementation can be considered. They are 
 ---
 
 
-## SEC-009 — Verify human approver identity on GitLab Free
+## SEC-009 — Verify independent human approver identity on GitLab Free
 
 - **Priority:** P0
 - **Status:** OPEN
 - **Depends on:** DES-001, SEC-001
-- **Related decision:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md)
+- **Related decisions:** [ADR-0014](../docs/decisions/0014-free-tier-human-approval-merge-gate.md), [ADR-0015](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
 **Work**
 - Confirm the exact Free 18.8 CE/EE response from the MR approvals endpoint.
-- Verify the `approved_by` user IDs can be resolved through the GitLab Users API.
-- Confirm the returned user metadata identifies bot/internal accounts reliably (for example, the `bot` field or a supported `humans` filter).
+- Verify the approved_by user IDs can be resolved through the GitLab Users API.
+- Confirm the returned user metadata identifies bot/internal accounts reliably (for example, the bot field or a supported humans filter).
 - Define how to handle missing, inaccessible, blocked, or ambiguous user records.
-- Ensure the MCP execution identity cannot be mistaken for an independent automation bot approval.
+- Evaluate and confirm the proposed rule that the qualifying human reviewer must be distinct from both the PAT owner (the MCP execution identity) and the MR author.
+- Do not infer that a GitLab approval record proves which client or interaction channel submitted it. Keep MCP merge disabled while independent-review identity cannot be established.
 
 **Acceptance criteria**
-- At least one human approver can be distinguished from bot/internal users using fields available on the target instance.
-- The behavior is verified against the company's exact patch and CE/EE distribution.
-- If a human cannot be verified, merge is denied.
-- The result is documented without publishing user IDs, usernames, or internal URLs.
-
-# Phase 1 — Security and architecture design
-
-These tasks define the security boundary before code is authorized.
+- At least one qualifying human approver can be distinguished from bot/internal users and, under the proposed safeguard, from the PAT owner and MR author.
+- The behavior is verified against the exact target patch and CE/EE distribution.
+- If a qualifying human reviewer cannot be verified, merge is denied.
+- The rule and evidence are documented without publishing user IDs, usernames, or internal URLs.
 
 ## SEC-001 — Select the GitLab authentication and identity model
 
 - **Priority:** P0
-- **Status:** OPEN
+- **Status:** DONE
 - **Depends on:** DES-001, DES-006
-- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
-- **Related ADR:** [ADR-0015 (Proposed)](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
+- **Reference:** [Authentication model](../docs/security/authentication-model.md)
+- **Related ADR:** [ADR-0015 (Accepted)](../docs/decisions/0015-gitlab-token-and-execution-identity.md)
 
-**Work**
-- Compare PAT, project access token, group access token, and OAuth 2.0 for GitLab Self-Managed Free 18.8.
-- Decide between a human-user execution identity and per-project bot identities.
-- Review the `api` scope blast radius and the lack of fine-grained PAT permissions in 18.8.
-- Determine the minimum token role needed for branch/commit/MR work and the separately approved merge operation.
-- Define how project-bot commit attribution and human-reviewer identity separation are preserved.
+**Decision recorded**
+- The user selected a Personal Access Token belonging to their existing human GitLab account.
+- GitLab actions performed by MCP are attributed to that human account; no project/group bot identity is used.
+- The selected initial scope is api for read/write REST API operations.
+- The PAT inherits the owner's effective permissions and can reach all projects/groups available to that account; it is not project-scoped.
+- The user's per-project roles are inherited by the PAT; there is no independent role setting on the token.
+- The explicit MCP project allowlist remains mandatory and must be enforced server-side.
 
 **Acceptance criteria**
-- ADR-0015 is Accepted, Rejected, or Superseded after explicit user decision.
-- Token type, identity, resource scope, scopes, and role are documented.
-- The selected identity can be attributed unambiguously in GitLab audit history.
+- ADR-0015 is Accepted and records the user's choice.
+- Token type, owner identity, effective resource reach, initial scope, and permission model are documented.
+- Credential handling and the broader PAT blast radius are recorded in the security requirements.
 - No credential is exposed to the model or repository.
 
-## SEC-010 — Test project access token scope and internal-visibility behavior
+**Follow-up validation**
+- SEC-010 validates PAT reach against the MCP allowlist.
+- SEC-011 validates the user's actual per-project permissions and protected-branch behavior.
+- SEC-009 validates independent human-review identity before MCP merge can be enabled.
+
+## SEC-010 — Validate PAT reach against the MCP project allowlist
 
 - **Priority:** P0
 - **Status:** BLOCKED
 - **Depends on:** SEC-001, DES-001
-- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
+- **Reference:** [Authentication model](../docs/security/authentication-model.md)
 
 **Work**
-- Provision a disposable Project Access Token in a test project using the selected candidate role and scope.
-- Verify it can access its associated project.
-- Verify it cannot read or mutate a second project that is not in the MCP allowlist.
-- Specifically test a second project with Internal visibility, because GitLab documentation notes an internal-user access caveat for project access tokens.
-- Record only sanitized status/permission outcomes.
+- On a disposable test setup, identify one project accessible to the PAT owner that is explicitly allowlisted and one project accessible to the same user that is not allowlisted.
+- Verify that MCP can perform permitted reads/writes on the allowlisted project subject to the user's GitLab role and operation approval.
+- Verify that MCP rejects reads and writes to the accessible-but-unlisted project before returning project data or issuing a mutation.
+- Test nested resources, cross-project references, alternate project paths/aliases, and renamed/ambiguous project resolution.
+- Confirm that the PAT itself remains capable of accessing the unlisted project directly; document this as the known credential blast radius rather than describing the PAT as project-scoped.
+- Record only sanitized outcomes; do not publish project names, IDs, URLs, or credentials.
 
 **Acceptance criteria**
-- The token's effective resource boundary is demonstrated against the target GitLab 18.8 CE/EE build.
-- A cross-project request is denied or is safely blocked by the MCP allowlist before GitLab data is returned.
-- The result and residual risk are recorded; no internal project names or identifiers are published.
+- The MCP allowlist is demonstrated to deny an unlisted project even when the PAT owner can access it.
+- All project-scoped read and write paths enforce canonical project IDs.
+- Tests and residual risk are documented without internal identifiers or secrets.
 
-## SEC-011 — Validate token roles against protected-branch merge permissions
+## SEC-011 — Validate the PAT owner's permissions against protected-branch operations
 
 - **Priority:** P0
 - **Status:** BLOCKED
 - **Depends on:** SEC-001, DES-001
-- **Reference:** [Authentication model comparison](../docs/security/authentication-model.md)
+- **Reference:** [Authentication model](../docs/security/authentication-model.md)
 
 **Work**
-- Test Developer-level Project Access Token for branch creation, file changes, commit creation, MR creation, and merge.
-- Test merge against the project's actual protected default branch.
-- Determine whether Maintainer role is required under the current branch rules.
-- Compare the privilege increase from a Maintainer project bot with the alternative of leaving MCP merge unavailable for projects where Developer cannot merge.
-- Do not change protected-branch rules as part of the test unless the user explicitly authorizes that separate change.
+- Record the PAT owner's effective role on each sanitized test project; the PAT has no independent Developer/Maintainer role.
+- Test repository reads, working-branch creation, file updates, commit creation, MR creation, approval-state reads, and merge using the actual account permissions.
+- Test merge against the project's actual protected default branch and current branch rules.
+- Identify any operation that the account cannot perform and keep that MCP capability unavailable for the project unless GitLab permissions are independently changed through normal administrative governance.
+- Review whether the account has broader memberships/roles than this workflow requires.
+- Do not elevate the user's role or change protected-branch rules merely to make MCP work.
 
 **Acceptance criteria**
-- Effective operation permissions for Developer and Maintainer token roles are recorded.
-- The least-privilege role that satisfies the accepted workflow is identified.
-- Any need for Maintainer is explicitly presented for user decision.
-- No protected-branch policy has been weakened implicitly.
+- Effective permissions are recorded per operation and test project without publishing internal identifiers.
+- MCP capabilities are limited to operations GitLab authorizes for the user's existing role.
+- Any missing permission or excessive account privilege is documented for explicit review.
+- No protected-branch policy or account role has been changed by this task.
 
 ## SEC-002 — Define local secret storage and credential lifecycle
 
@@ -291,19 +296,20 @@ These tasks define the security boundary before code is authorized.
 - Setup and rotation procedures are documented.
 - Missing, invalid, expired, and revoked credentials produce clear non-secret errors.
 
-## SEC-012 — Validate GitLab token expiration and rotation behavior
+## SEC-012 — Validate personal access token expiration and rotation behavior
 
 - **Priority:** P1
 - **Status:** BLOCKED
 - **Depends on:** SEC-001, SEC-002
 
 **Work**
-- Confirm token expiration defaults and maximum lifetime enforced by the target instance.
-- Define rotation and revocation behavior for per-project credentials.
+- Confirm PAT expiration defaults and maximum lifetime enforced by the target instance.
+- Define renewal, replacement, and immediate revocation for the single user PAT.
 - Verify the MCP can distinguish expired, revoked, rotated, and under-scoped tokens without exposing token values.
+- Document that rotation/revocation affects MCP access to all configured projects because one PAT is used.
 
 **Acceptance criteria**
-- The credential lifecycle is documented.
+- The user PAT lifecycle is documented.
 - Rotation does not cause uncontrolled or ambiguous credential state.
 - Revoked/expired tokens fail with clear, non-secret diagnostics.
 
