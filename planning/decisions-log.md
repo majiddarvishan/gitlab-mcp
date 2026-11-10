@@ -23,6 +23,7 @@ Last updated: 2026-11-10
 | D-017 | Require human GitLab approval plus separate MCP approval before merge | Accepted | MCP requires one verified human approval recorded in GitLab and a separate operation-specific user confirmation. |
 | D-018 | Use one Project Access Token per allowlisted project | Rejected | Not selected; the user explicitly chose a Personal Access Token tied to their human GitLab account. |
 | D-019 | Use the user's Personal Access Token as the MCP execution identity | Accepted | GitLab actions are attributed to the user's human account; the token inherits that account's permissions and is not project-scoped. The MCP allowlist remains mandatory server-side enforcement. |
+| D-020 | Require an independent human GitLab reviewer before MCP merge | Accepted | The qualifying reviewer must be a regular human account distinct from both the PAT owner and MR author. MCP merge stays disabled until this can be verified on the target GitLab instance. |
 
 ## Decision process
 A proposal becomes Accepted only after explicit user agreement. Material changes should be recorded as a new ADR rather than silently changing an accepted decision.
