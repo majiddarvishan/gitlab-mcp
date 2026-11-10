@@ -29,3 +29,10 @@ Any material change to the MR or merge parameters after approval invalidates the
 
 ## Reference
 - [GitLab Merge Requests API](https://docs.gitlab.com/api/merge_requests/)
+
+
+## GitLab Free limitation
+
+On the target GitLab Free tier, MR approvals are optional and do not prevent merging when no approval exists. The richer required approval rules are not available. The approval-state API can report the users who approved, but exact response fields depend on CE/EE distribution.
+
+The accepted decision to allow MCP merge with separate MCP approval therefore does not imply that GitLab Free enforces a human approval. Whether MCP should enforce at least one human approval as an additional precondition is still Proposed in ADR-0014.
