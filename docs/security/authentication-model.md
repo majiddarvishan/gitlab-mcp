@@ -111,7 +111,7 @@ ADR-0014 remains in force: merge requires a verified human GitLab approval plus 
 
 The selected PAT belongs to a human user, so GitLab may expose the execution identity as a regular human account. A GitLab approval record identifies the approving account but does not prove whether the approval was entered through the GitLab UI or by an API client. The approval of the PAT owner must therefore not automatically be treated as independent review.
 
-**Accepted reviewer-independence rule:** the qualifying reviewer must be a regular human account distinct from both the PAT owner (the MCP execution identity) and the MR author. The user explicitly approved this condition. SEC-009 must still validate that the target GitLab Free 18.8 CE/EE API exposes sufficient identity metadata. Until this validation is complete and the implementation can enforce the rule, MCP merge remains disabled. Bot/internal users and missing, stale, inaccessible, or ambiguous approval identities never satisfy the gate.
+**Accepted reviewer-independence rule:** the qualifying reviewer must be a regular human account distinct from both the PAT owner (the MCP execution identity) and the MR author. The user explicitly approved this condition. SEC-009 must still validate that the target GitLab Self-Managed EE v18.8.4 API exposes sufficient identity metadata. Until this validation is complete and the implementation can enforce the rule, MCP merge remains disabled. Bot/internal users and missing, stale, inaccessible, or ambiguous approval identities never satisfy the gate.
 
 ## Credential lifecycle
 
