@@ -44,7 +44,7 @@ The project is documentation-first. No implementation is approved until the requ
 ## GitLab Free 18.8 constraints
 
 - Basic code search is limited to a project; advanced/exact and global/group code search are not part of the Free-tier baseline.
-- MR approvals are optional on Free; required approval rules are not included. An additional MCP-side human-approval gate before merge is still proposed and awaits user decision.
+- MR approvals are optional on Free; required approval rules are not included. The accepted MCP policy requires one verified human GitLab approval plus a separate MCP merge confirmation.
 - Job logs and artifacts remain excluded from the first release.
 
 GitLab 18.8 is outside the maintained release lines listed by GitLab as of 2026-11-10. Production use should be accompanied by an upgrade plan or explicit risk acceptance.
@@ -57,7 +57,7 @@ The following choices remain Proposed and are not implementation commitments yet
 - Primary local transport: STDIO.
 - GitLab integration: REST API v4.
 
-See [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Client Compatibility](docs/architecture/client-compatibility.md), [GitLab Environment Profile](docs/environment/gitlab-target.md), [Detailed Task Backlog](planning/tasks.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
+See [Authentication Model](docs/security/authentication-model.md), [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Client Compatibility](docs/architecture/client-compatibility.md), [GitLab Environment Profile](docs/environment/gitlab-target.md), [Detailed Task Backlog](planning/tasks.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
 
 ## Important data-handling note
 
