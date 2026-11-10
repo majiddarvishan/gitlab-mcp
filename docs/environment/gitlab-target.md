@@ -1,19 +1,20 @@
 # GitLab Target Environment Profile
 
-- **Profile status:** Partially confirmed; patch and distribution details pending
+- **Profile status:** Confirmed (exact build supplied by user)
 - **Last updated:** 2026-11-10
 - **Validation procedure:** [Target-instance validation runbook](validation-runbook.md)
 - **Offering:** GitLab Self-Managed
-- **Subscription tier:** Free (user-confirmed)
-- **Version line:** 18.8 (user-confirmed)
-- **Exact patch:** Not yet provided (for example, 18.8.0 or 18.8.6)
-- **Distribution / edition:** Community Edition (CE) or Enterprise Edition (EE) not yet confirmed
+- **Distribution / edition:** Enterprise Edition (EE), user-confirmed
+- **Subscription tier:** Free, user-confirmed (EE distribution does not imply a paid license)
+- **Version line:** 18.8
+- **Exact patch:** 18.8.4-ee, user-confirmed
+- **Version tag:** [v18.8.4-ee](https://gitlab.com/gitlab-org/gitlab/-/tags/v18.8.4-ee)
 - **Internal base URL / hostname:** Intentionally not recorded in this public repository
 - **Credentials / tokens:** Never record here
 
 ## Purpose
 
-The MCP design targets the company's GitLab Self-Managed Free tier, version 18.8. The exact patch and CE/EE distribution are still needed because the deployed build can affect security fixes, endpoint behavior, and response fields. The subscription tier and the CE/EE distribution are related but are not interchangeable labels.
+The MCP design targets GitLab Self-Managed Enterprise Edition v18.8.4-ee running with the Free subscription tier. The exact patch and distribution were supplied by the user. The subscription tier and the CE/EE distribution are separate properties: EE is the deployed distribution, while Free is the license tier.
 
 ## Confirmed environment facts
 
@@ -23,20 +24,17 @@ The MCP design targets the company's GitLab Self-Managed Free tier, version 18.8
 | Subscription tier | Free | Confirmed by user |
 | Major version | 18 | Confirmed |
 | Minor version | 8 | Confirmed by user |
-| Patch version | Not yet supplied | Pending |
-| Distribution | CE or EE not yet supplied | Pending |
+| Patch version | 18.8.4 | Confirmed by user |
+| Distribution | Enterprise Edition (EE) | Confirmed by user |
+| Version tag | v18.8.4-ee | Confirmed by user |
 | Internal network reachability | Workstation can reach GitLab directly | Confirmed |
 | Relevant feature limitations | Free-tier limitations documented below; instance validation pending | Partially confirmed |
 
-## How to identify the exact patch and distribution safely
+## Version evidence
 
-1. Sign in to the company GitLab using the normal browser.
-2. In the left sidebar, go to **Help > Help**.
-3. Read the version/distribution string displayed at the top of the Help page.
-4. Send only the text of that version/distribution line, for example `GitLab Enterprise Edition 18.8.6` or `GitLab Community Edition 18.8.6`.
-5. Do not send or publish the private URL, hostname, IP, project names, account identifiers, or any token.
+The user supplied the version line `GitLab Enterprise Edition v18.8.4-ee` and its public GitLab release tag. This is sufficient to complete DES-001. No private instance URL, hostname, IP, project name, account identifier, or token is recorded.
 
-If the page shows only `18.8`, the administrator can also provide the exact package version from the server's package information. No shell output containing hostnames, IPs, or configuration secrets is needed.
+The remaining API behavior checks must still be run against the actual instance, because instance settings, feature flags, and exact runtime configuration can affect behavior.
 
 ## Free-tier constraints relevant to this project
 
@@ -54,9 +52,10 @@ If the page shows only `18.8`, the administrator can also provide the exact pack
 - GitLab Free allows eligible users with Developer role or higher to approve merge requests.
 - On Free, these approvals are optional; they do not prevent merging when no approval exists.
 - Required approval rules and richer approval-policy configuration require Premium or Ultimate.
-- The MR approval-state API is available on Free, but response attributes depend on CE/EE distribution. On Community Edition, the documented response is limited to `approved`, `approved_by`, `user_can_approve`, and `user_has_approved`. Current GitLab API documentation states that EE returns additional attributes even without a paid license; the exact target response must still be captured and verified.
-- The richer `approval_state` endpoint and approval-rule details are Premium/Ultimate. Do not assume they are available on this target.
-- The Users API documents `GET /users/:id` for a regular authenticated user with `bot` and `state` fields, and `GET /users?username=:username&humans=true` to select regular users who are neither bot nor internal users. The current Users API page does not state when the `humans` filter was introduced; GitLab 18.8 support must be tested on the target instance.
+- The MR approval-state API is available on Free. Because this target is EE, GitLab documents that the approval-state endpoint returns the full EE response schema even without a paid license. That includes attributes such as `approved_by`, `approvals_required`, `approvals_left`, approval-rule metadata, `state`, and `merge_status`; the exact response must still be captured on v18.8.4-ee.
+- On EE, `approved=true` means the configured approval rules are satisfied. When no approval rules apply, GitLab can return `approved=true` even when `approved_by` is empty. Therefore `approved` is not evidence that a human reviewer exists; the MCP gate must inspect and classify `approved_by`.
+- The separate `GET .../approval_state` endpoint that retrieves approval details/rules remains Premium/Ultimate. The EE response schema for `GET .../approvals` does not make that separate endpoint available on the Free license.
+- The Users API currently documents `GET /users?username=:username&humans=true` to select regular users who are neither bot nor internal users. The docs do not identify the version in which `humans` was introduced; support must be tested on the exact 18.8.4-ee instance before relying on it.
 - If the product must require at least one human approval before MCP performs a merge, that must be an explicit MCP-side policy; it is not enforced by the Free tier itself.
 
 ## Version maintenance and security note
@@ -91,3 +90,4 @@ This does not prevent designing or testing MCP compatibility with 18.8. However,
 - [Users API](https://docs.gitlab.com/api/users/)
 - [Internal users](https://docs.gitlab.com/administration/internal_users/)
 - [Personal access tokens](https://docs.gitlab.com/user/profile/personal_access_tokens/)
+- [Exact GitLab v18.8.4-ee tag](https://gitlab.com/gitlab-org/gitlab/-/tags/v18.8.4-ee)
