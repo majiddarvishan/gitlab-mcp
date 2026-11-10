@@ -29,3 +29,12 @@ A ChatGPT/MCP confirmation to merge is not a code-review approval and must never
 ## References
 - [GitLab Merge Request Approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [GitLab Merge Request Approval Settings](https://docs.gitlab.com/user/project/merge_requests/approvals/settings/)
+
+
+## Free-tier limitation confirmed after the decision
+
+GitLab Free permits eligible users to approve MRs, but those approvals are optional and do not block merging. Required approval rules and richer approval-rule configuration require Premium or Ultimate.
+
+The Free-tier approval-state API can report `approved_by`, but response fields differ between Community Edition and Enterprise Edition. The richer `approval_state` and approval-rule details endpoints are not available in Free.
+
+This ADR means MCP must never perform an approval. It does not, by itself, specify whether MCP must require a human approval before it executes a separately approved merge. That separate policy is documented as Proposed in ADR-0014.
