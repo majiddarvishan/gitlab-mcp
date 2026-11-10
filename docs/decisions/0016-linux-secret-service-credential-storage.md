@@ -56,8 +56,8 @@ For the initial Linux desktop deployment, use the Freedesktop Secret Service D-B
 
 This ADR must remain Proposed until:
 - The user confirms the MCP runtime runs in the same Linux desktop session, or selects another platform/backend.
-- SEC-002 tests a non-secret canary item through the actual keyring provider.
-- The MCP runtime can read an unlocked item without printing it and fails closed under all unavailable/locked/missing/ambiguous cases.
+- SEC-002 tests a non-secret canary item through the actual keyring provider, verifies the user's D-Bus session and lock/unlock behavior, and accepts the fail-closed policy.
+- TST-009 later verifies that the actual ChatGPT Desktop/Codex-launched MCP process can read an unlocked item without printing it and fails closed under unavailable/locked/missing/ambiguous cases. The runtime must not use the PAT before this host integration test passes.
 - The user explicitly accepts this credential-storage design.
 
 No PAT may be created solely to test this storage proposal.
