@@ -1,5 +1,7 @@
 # Roadmap
 
+The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.md). This roadmap is the high-level phase summary; task-level dependencies and acceptance criteria live in the backlog.
+
 ## Phase 0 — Design baseline (current)
 - [x] Confirm target: self-managed GitLab reachable from workstation.
 - [x] Prefer local MCP architecture; no public GitLab exposure.
