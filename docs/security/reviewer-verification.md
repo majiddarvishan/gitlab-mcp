@@ -117,7 +117,52 @@ The approvals API records the GitLab account to which an approval is attributed.
 
 The test verifies account classification and separation from the PAT owner and MR author. It does not validate organizational reviewer eligibility, code-owner rules, or paid-tier approval-rule enforcement.
 
-## 6. Evidence and completion criteria
+## 6. Optional one-off API caller (local terminal only)
+
+This helper is for manual validation only; it is not MCP implementation code. Use it only if a suitable PAT already exists and can be entered locally. Do not create a new PAT until SEC-002 has defined secure storage.
+
+The helper prompts for the PAT without echoing it, passes the header to curl through standard input (not as a command-line argument), and unsets the shell variable after each request. Do not enable shell tracing (`set -x`) while using it.
+
+```bash
+set +x
+GITLAB_BASE='https://<your-private-gitlab-host>'
+
+gitlab_get() {
+  local path="$1"
+  local token
+  read -r -s -p 'GitLab PAT: ' token
+  printf '\n'
+  printf 'header = "PRIVATE-TOKEN: %s"\n' "$token" |
+    curl --silent --show-error --fail --config - \
+      --write-out '\nHTTP_STATUS=%{http_code}\n' \
+      --url "${GITLAB_BASE%/}/api/v4${path}"
+  local rc=$?
+  unset token
+  return "$rc"
+}
+```
+
+Run requests locally. Replace placeholders with private values only in your terminal:
+
+```bash
+# PAT owner identity
+gitlab_get '/user'
+
+# MR approval record, including approved_by
+gitlab_get '/projects/<project-id>/merge_requests/<mr-iid>/approvals'
+
+# Regular-user representation for one approver
+gitlab_get '/users/<approver-user-id>'
+
+# Exact human/active filter for that username
+gitlab_get '/users?username=<approver-username>&humans=true&active=true'
+```
+
+The JSON response contains private IDs/usernames. Keep it local. Do not paste raw responses, command history, shell transcripts, or the internal base URL into chat or the public repository. Report only sanitized results such as HTTP status, field-present booleans, PASS/FAIL, and whether one qualifying reviewer exists.
+
+If the shell session exits, the function and local variables are discarded. The helper does not write the PAT to a file. Do not run the commands with `-v`, `--trace`, `set -x`, or shell transcript recording enabled.
+
+## 7. Evidence and completion criteria
 
 Keep only sanitized evidence in the public repository:
 
