@@ -1,60 +1,64 @@
 # GitLab MCP
 
-A local Model Context Protocol (MCP) server that enables ChatGPT Desktop and Codex to work with a self-managed GitLab instance that is reachable from the user's workstation.
+A local Model Context Protocol (MCP) server that enables ChatGPT Desktop and Codex to work with a self-managed GitLab instance reachable from the user's workstation.
 
-The project is being designed documentation-first. No implementation is considered approved until the relevant requirements and architecture decisions are reviewed.
+The project is documentation-first. No implementation is approved until the requirements and architecture baseline are complete and the user explicitly authorizes implementation.
 
 ## Goals
 
 - Connect AI-assisted development workflows to a self-managed GitLab instance without making GitLab publicly reachable.
-- Support repository discovery, code reading, search, and project-management context.
-- Support write operations from the outset, with explicit approval required for every state-changing operation.
-- Keep the MCP server local to the workstation and use the workstation's existing network/VPN access to GitLab.
-- Keep the public project repository free of company-specific details, credentials, private source code, and internal network identifiers.
+- Support repository discovery, code reading, search, and approved development workflows.
+- Support write operations with explicit approval required for every state-changing operation.
+- Restrict all MCP access to projects explicitly included in a local allowlist.
+- Require repository code changes to use a dedicated working branch and merge request.
+- Permit MR merge only through a separate, explicit approval; keep MR review approval human-only.
+- Limit first-release CI/CD access to pipeline and job metadata/status.
 
 ## Non-goals
 
 - Exposing the company's GitLab instance to the public internet.
-- Storing GitLab credentials in source control or in tool descriptions.
-- Automatically performing writes without per-operation user approval.
-- Implementing the server before the open design decisions are resolved.
+- Accessing every project visible to the GitLab identity without an explicit allowlist entry.
+- Writing directly to the default or protected branch.
+- Approving or unapproving merge requests on behalf of a human reviewer.
+- Triggering, retrying, or cancelling CI/CD jobs/pipelines in the first release.
+- Fetching CI/CD job logs/traces or artifacts in the first release.
+- Storing GitLab credentials in source control.
 
-## Current design direction
+## Accepted design baseline
 
-| Area | Current position | Status |
-|---|---|---|
-| Git provider | GitLab Self-Managed | Accepted |
-| GitLab reachability | Workstation can reach GitLab on the internal network | Confirmed environment constraint |
-| MCP location | Local workstation | Accepted |
-| Clients | ChatGPT Desktop first; Codex is an acceptable fallback | Accepted |
-| Access model | Read and write capabilities | Accepted |
-| Write safety | Explicit approval for every state-changing operation | Accepted |
-| Implementation language | Go | Proposed; not yet ratified |
-| MCP transport | STDIO | Proposed; not yet ratified |
-| GitLab API | REST API | Proposed; not yet ratified |
-| Project repository visibility | Public documentation repository | Accepted |
+| Area | Decision |
+|---|---|
+| Git provider | GitLab Self-Managed |
+| Target version | 18.x; exact minor/patch and edition to be confirmed |
+| Network | Private/internal; workstation already has access |
+| MCP location | Local workstation |
+| Clients | ChatGPT Desktop first; Codex is an acceptable fallback |
+| Project access | Explicit local project allowlist |
+| Repository code changes | Dedicated working branch followed by MR |
+| Merge | Supported only with separate, operation-specific approval |
+| MR approval | Human-only; MCP may read approval state |
+| CI/CD | Read pipeline/job metadata and status only |
+| Job logs/artifacts | Deferred, excluded from first release |
+| Write safety | Explicit approval for every mutation |
 
-## Important client distinction
+## Proposed technical choices
 
-This project targets the local MCP host supported by ChatGPT Desktop and Codex. The current OpenAI MCP documentation says the ChatGPT desktop app, Codex CLI, and IDE extension share the Codex MCP configuration, and that local STDIO servers can be configured there.
+The following choices remain Proposed and are not implementation commitments yet:
 
-This is distinct from ChatGPT web's Developer Mode custom MCP apps, which connect to remote MCP servers. A local STDIO server should not be assumed to appear as a web-hosted custom app.
+- Implementation language: Go.
+- Primary local transport: STDIO.
+- GitLab integration: REST API v4.
 
-Official documentation:
-- [MCP in ChatGPT and Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
-- [Developer mode and MCP apps in ChatGPT](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt)
+See [Architecture Decision Records](docs/decisions/README.md), [Capability Matrix](docs/gitlab/capability-matrix.md), [Roadmap](planning/roadmap.md), and [Decisions Log](planning/decisions-log.md).
 
-## Repository structure
+## Important data-handling note
 
-- `docs/requirements/`: functional and non-functional requirements.
-- `docs/architecture/`: architecture and client integration notes.
-- `docs/security/`: credentials, approval, and data-handling requirements.
-- `docs/gitlab/`: capability inventory and operation status.
-- `docs/decisions/`: Architecture Decision Records (ADRs).
-- `planning/`: roadmap and decision tracking.
+GitLab being private does not mean repository content stays local to the workstation. Content returned by MCP tools may be sent to the AI provider for model processing. Use only projects and data authorized for this workflow.
+
+## Repository hygiene
+
+This repository is public. Never commit internal GitLab URLs, hostnames, IP addresses, organization-specific project names, customer information, private source code, credentials, tokens, private keys, or unredacted operational logs.
 
 ## Status
 
-Design and requirements phase. No application code is included yet.
-
-See [the decision log](planning/decisions-log.md) and [roadmap](planning/roadmap.md) for current progress.
+Design and requirements phase. No application implementation code is included or authorized yet.
