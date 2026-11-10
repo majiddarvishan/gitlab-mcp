@@ -114,6 +114,8 @@ The selected PAT belongs to a human user, so GitLab may expose the execution ide
 
 ## Credential lifecycle
 
+GitLab's current PAT documentation describes a 365-day default expiry date when no date is supplied (unless instance settings change this) and expiry at midnight UTC on the expiry date. The target GitLab 18.8 instance's actual expiry requirement and maximum lifetime must be verified before provisioning; see [SEC-012](../environment/validation-runbook.md#6-validate-pat-expiry-and-rotation-policy-sec-012).
+
 The design must define:
 - Secure initial PAT provisioning without entering the token into model-visible chat.
 - Expiration and renewal.
@@ -125,6 +127,8 @@ The design must define:
 Because this is one user PAT, rotation or revocation affects MCP access to all configured projects.
 
 ## Remaining validation
+
+The target-instance test procedure is maintained in the [validation runbook](../environment/validation-runbook.md).
 
 1. Which projects and groups can the PAT owner currently access, and what is the effective role on each intended project?
 2. Does the explicit MCP allowlist deny a project that the PAT owner can access but has not allowlisted?
