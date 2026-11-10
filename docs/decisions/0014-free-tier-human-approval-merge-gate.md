@@ -29,6 +29,8 @@ This is an application-level policy gate because GitLab Free does not enforce re
 
 ## Human approval verification
 
+The required target-instance validation procedure is defined in [SEC-009 reviewer verification](../security/reviewer-verification.md).
+
 The first-release implementation must:
 - Read the GitLab Free-compatible approval state through `GET /projects/:id/merge_requests/:merge_request_iid/approvals`.
 - Inspect the `approved_by` list; do not rely only on the boolean `approved`, because its semantics and available response fields differ by CE/EE distribution.
