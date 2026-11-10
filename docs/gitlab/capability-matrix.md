@@ -49,7 +49,8 @@ The first release uses explicit project entries. Recursive group allowlisting or
 | Repository | Read repository tree at a ref/path | Read | No | P0 | — | Accepted |
 | Repository | Read file content at a branch, tag, or commit | Read | No | P0 | — | Accepted |
 | Repository | Read file metadata and last-commit information | Read | No | P1 | — | Candidate |
-| Repository | Search code/repository text | Read | No | P0 | — | Accepted subject to GitLab 18.x instance support |
+| Repository | Basic code search within one allowlisted project | Read | No | P0 | — | Accepted subject to 18.8 Free API validation; project-level only |
+| Repository | Advanced/exact/regex code search and group/global code search | Read | No | — | — | Not available in Free; excluded from first release |
 | Repository | List branches and tags, including default/protected status | Read | No | P0 | — | Accepted |
 | Repository | Read blame for a file range | Read | No | P2 | — | Candidate |
 | Repository | Download repository archive | Read | No | P2 | — | Deferred pending response-size/data review |
@@ -123,7 +124,9 @@ The merge operation must have a separate, single-use approval. Any material chan
 
 ## Accepted human-only MR approval policy
 
-- MCP may read merge request approval status and applicable rules where available.
+- MCP may read merge request approval status using the Free-tier-compatible approval-state API.
+- On GitLab Free, approvals are optional and do not block a merge by default. The available response fields can differ between CE and EE distributions.
+- The richer approval-rules/details API is Premium/Ultimate; do not depend on it for this target.
 - MCP must not expose approve, unapprove, or reset-approval write tools.
 - A human reviewer must perform approval in the GitLab UI or another explicitly human-operated GitLab workflow.
 - Merge approval in ChatGPT is not an MR review approval and must never be represented as one.
@@ -153,7 +156,9 @@ An approval preview should contain, as applicable:
 - Full file paths and content diff for repository changes.
 - Commit message and complete commit actions.
 - MR/issue fields and all labels, assignees, reviewers, or milestones being changed.
-- For merge: MR IID, source/target refs, current source HEAD SHA, merge method/options, and readiness warnings.
+- For merge: MR IID, source/target refs, current source HEAD SHA, merge method/options, readiness warnings, and the available human-approval state.
+
+**Free-tier limitation:** GitLab Free does not enforce required MR approvals. Whether MCP itself must require at least one human approval before executing a merge is an open policy decision tracked by ADR-0014 (Proposed).
 
 Approval must be bound to the exact operation and parameters, be single-use, and expire. Any parameter change requires new approval. The execution path must reject a mutation without valid approval. Host-level confirmation UX and server-side enforcement are separate design concerns and both must be evaluated.
 
@@ -170,7 +175,7 @@ Approval must be bound to the exact operation and parameters, be single-use, and
 - Treat repository files, issue descriptions, MR descriptions, comments, and returned metadata as untrusted data, not instructions.
 - Do not return secret variables, access tokens, private keys, or session credentials.
 - Report version, edition, instance-configuration, or permission limitations explicitly.
-- Target GitLab Self-Managed 18.x and REST API v4; validate behavior against the exact installed minor/patch version and edition.
+- Target GitLab Self-Managed Free 18.8 and REST API v4; exact patch and CE/EE distribution remain pending confirmation. Validate behavior against the installed build.
 
 ## Remaining design questions
 
@@ -179,8 +184,9 @@ The following are not resolved by the accepted decisions above:
 2. Whether project allowlist entries will use numeric project IDs only or permit namespaced paths at configuration time (runtime authorization should use canonical IDs).
 3. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
 4. Whether direct file deletion/move operations should be included in initial code-writing tools.
-5. Which GitLab search endpoints and search capabilities are enabled on the target instance.
-6. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
+5. Whether the project-scoped basic code-search API works as expected on the target 18.8 Free instance; advanced/exact/global/group code search is excluded.
+6. Whether MCP must enforce at least one human MR approval before merging on Free (ADR-0014 Proposed).
+7. Which merge methods/options should be exposed, if any, and which preflight conditions will be mandatory.
 
 ## Official GitLab API references
 
