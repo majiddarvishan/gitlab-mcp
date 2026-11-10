@@ -37,7 +37,7 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Review 18.8 maintenance status and document upgrade plan/risk acceptance (DES-010).
 - [ ] Validate Free-tier project-level code search API (DES-009).
 - [x] Require a verified human GitLab MR approval plus separate MCP merge approval (DES-011 / ADR-0014).
-- [ ] Verify human approver identity metadata on the exact Free 18.8 CE/EE instance (SEC-009).
+- [ ] Verify independent human approver identity metadata on the exact Free 18.8 CE/EE instance (SEC-009); reviewer must differ from PAT owner and MR author.
 - [ ] Define API compatibility tests against the target GitLab 18.x instance.
 
 ## Phase 2 — Implementation (not authorized yet)
