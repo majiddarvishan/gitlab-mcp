@@ -120,7 +120,8 @@ The v18.8.4-ee PAT documentation states that Free-tier PATs have a 365-day defau
 The design must define:
 - Secure initial PAT provisioning without entering the token into model-visible chat.
 - Expiration and renewal.
-- Rotation and replacement, including verification of the new token before retiring the old one where GitLab permits a safe overlap.
+- Planned no-downtime replacement: create a second PAT, store and validate it, switch the MCP client, then revoke the old PAT. Do not use the GitLab Rotate UI for this sequence because it immediately invalidates the old token.
+- Incident response: revoke a compromised PAT immediately, then provision a replacement; do not preserve a compromised token for overlap.
 - Immediate revocation if the token is exposed or the user no longer wants MCP access.
 - Behavior when the token is missing, revoked, expired, or loses required permissions.
 - A sanitized credential inventory without token values.
