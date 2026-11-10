@@ -13,7 +13,7 @@ The target company instance is GitLab Self-Managed 18.x. The MCP server must be 
 3. Support a broad range of older and newer GitLab releases from the beginning.
 
 ## Decision
-The compatibility target is GitLab Self-Managed 18.x and the GitLab REST API v4.
+The compatibility target is GitLab Self-Managed Free 18.8 and the GitLab REST API v4. The exact patch number and CE/EE distribution remain pending confirmation.
 
 The exact minor/patch version and edition of the company instance have not yet been supplied. They must be recorded during environment validation before endpoint-level implementation is finalized.
 
@@ -34,3 +34,14 @@ The server must:
 - [GitLab Merge Requests API](https://docs.gitlab.com/api/merge_requests/)
 - [GitLab Merge Request Approvals API](https://docs.gitlab.com/api/merge_request_approvals/)
 - [GitLab Pipelines API](https://docs.gitlab.com/api/pipelines/)
+
+
+## Maintenance status
+
+As of 2026-11-10, GitLab's published maintained release lines are 19.5, 19.4, and 19.3. Version 18.8 is outside the currently maintained list. Compatibility work may target 18.8, but production deployment should be accompanied by an administrator-owned upgrade plan or explicit risk acceptance.
+
+## Additional compatibility considerations
+
+- GitLab Free does not include advanced/exact code search or required MR approval rules.
+- Basic project-level code search is available in Free, but the exact project-scoped API behavior must be validated on the installed 18.8 instance.
+- MR approval state is readable on Free, but fields differ between Community Edition and Enterprise Edition.
