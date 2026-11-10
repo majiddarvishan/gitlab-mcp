@@ -1,7 +1,7 @@
 # GitLab Target Instance Validation Runbook
 
-- **Status:** Procedure defined; target-instance results pending
-- **Target:** GitLab Self-Managed Free 18.8
+- **Status:** Procedure defined; target-instance API validation pending
+- **Target:** GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
 - **Last reviewed:** 2026-11-10
 - **Related tasks:** DES-001, SEC-009, SEC-010, SEC-011, SEC-012
 - **Related profile:** [GitLab target environment](gitlab-target.md)
@@ -20,16 +20,15 @@ Keep raw results locally in an approved secure location. Publish only the exact 
 
 Do not create a PAT solely to complete this checklist until the local credential-storage decision (SEC-002) is settled. Do not relax permissions, branch protection, or instance policy to make a test pass.
 
-## 2. Identify the exact GitLab build (DES-001)
+## 2. Exact GitLab build (DES-001 — DONE)
 
-1. Sign in using the normal browser.
-2. Open **Help > Help**.
-3. Copy only the product/version line shown on that page.
-4. Determine whether the distribution is Community Edition (CE) or Enterprise Edition (EE).
-5. Keep the subscription tier separate from the distribution label. An EE distribution can be running without a paid license and still expose edition-specific response fields.
-6. Provide only a sanitized string such as `GitLab Community Edition 18.8.x` or `GitLab Enterprise Edition 18.8.x`.
+The user supplied `GitLab Enterprise Edition v18.8.4-ee`. The project records:
+- Distribution: Enterprise Edition (EE).
+- Subscription tier: Free.
+- Exact version: 18.8.4-ee.
+- Public version tag: [v18.8.4-ee](https://gitlab.com/gitlab-org/gitlab/-/tags/v18.8.4-ee).
 
-**Required output:** exact patch plus CE/EE. Do not send the page URL, hostname, screenshots, or package/configuration output.
+The subscription tier is not inferred from the EE distribution. If the installed build is upgraded or changed, update the environment profile and repeat version-sensitive API validation.
 
 ## 3. Validate independent human reviewer identity (SEC-009)
 
@@ -63,7 +62,7 @@ Call:
 GET /api/v4/projects/:id/merge_requests/:merge_request_iid/approvals
 ```
 
-Inspect `approved_by`; for each entry, record locally the nested user ID and username. Do not rely on the top-level `approved` flag alone. The returned fields vary between CE and EE, but the `approved_by` list is the relevant record of accounts that approved.
+Inspect `approved_by`; for each entry, record locally the nested user ID and username. Do not rely on the top-level `approved` flag alone. This target is EE, so GitLab documents the full EE response schema even without a paid license. In particular, `approved=true` can be returned when no approval rules apply and `approved_by` is empty. The `approved_by` list remains the relevant record of accounts that approved.
 
 ### 3.4 Classify each candidate approver
 
@@ -117,15 +116,16 @@ GitLab's authorization and branch protections remain authoritative. Do not eleva
 
 ## 6. Validate PAT expiry and rotation policy (SEC-012)
 
-Before token creation, inspect the target instance's PAT creation page and, with an administrator where necessary, confirm:
-- Whether an expiration date is required.
-- The maximum permitted expiration date or lifetime.
-- The expiration date selected for the eventual PAT.
-- The local renewal owner and reminder process.
+The version-tagged v18.8.4-ee PAT documentation states:
+- A PAT with no explicitly supplied expiry defaults to 365 days from creation.
+- The default maximum lifetime on Free is 365 days.
+- A 400-day maximum can be enabled in GitLab 17.6 and later by the `buffered_token_expiration_limit` feature flag; it is disabled by default. Confirm whether the target administrator enabled it.
+- A PAT expires at midnight UTC on its expiry date.
+- The Rotate UI workflow has been available since GitLab 17.7. Rotation creates fresh credentials, preserves the old token's scope and permissions, and immediately invalidates the old token.
 
-GitLab's current documentation says new access tokens default to an expiry date 365 days from creation when no date is supplied, unless the instance setting is changed; token expiry takes effect at midnight UTC on the expiry date. Administrator-configured maximum lifetime behavior depends on edition/settings. Validate the actual target instance rather than assuming current defaults apply unchanged to 18.8.
+Before provisioning, confirm the actual token-creation UI/instance settings and choose an expiry date. Define the local renewal owner and reminder process.
 
-Do not place the PAT in chat, source control, a plain text config file, shell history, process arguments, or logs. Token creation and rotation must follow the accepted local secret-storage decision. Revoke a compromised token immediately; a revoked/expired PAT cannot be reactivated and must be replaced.
+Do not place the PAT in chat, source control, a plain text config file, shell history, process arguments, or logs. Token creation and rotation must follow the accepted local secret-storage decision. Revoke a compromised token immediately. Use the GitLab Rotate flow for planned renewal only after SEC-002 defines safe credential replacement and storage; a rotated/revoked token cannot continue authenticating.
 
 ## 7. Sanitized result template
 
@@ -152,7 +152,7 @@ Do not include IDs, usernames, project identifiers, internal URLs, request heade
 
 ## 8. Completion gates
 
-- **DES-001** is DONE only after exact patch and CE/EE distribution are recorded.
+- **DES-001 is DONE**: exact patch and EE distribution are recorded as v18.8.4-ee with Free subscription tier.
 - **SEC-009** is DONE only after regular human, bot/internal, owner, author, inactive/locked, inaccessible, and stale-approval cases are verified and sanitized evidence is committed.
 - **SEC-010** is DONE only after the implemented MCP allowlist passes the integration matrix.
 - **SEC-011** is DONE only after actual per-project permissions and protected-branch behavior are recorded.
