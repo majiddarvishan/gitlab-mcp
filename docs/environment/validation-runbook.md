@@ -171,9 +171,8 @@ No GitLab PAT exists yet. Before requesting one, complete the [non-secret workst
 
 The preflight checks the user-session Secret Service D-Bus provider, the default collection alias, and a disposable canary value. It must pass store, lookup, and clear operations. Do not use a real PAT as a test value.
 
-SEC-002 remains OPEN until:
-- The user confirms that the target MCP runtime is the same Linux desktop session.
-- The storage proposal ADR-0016 is accepted.
+The user has confirmed that the target MCP runtime will use the same Linux desktop and logged-in account. That environment prerequisite is satisfied. SEC-002 remains OPEN until:
+- The storage proposal ADR-0016 is explicitly accepted.
 - The canary test passes and the provider's lock/unlock behavior is understood.
 - The runtime failure behavior is agreed: missing/locked/unavailable/ambiguous secret => fail closed, with no plaintext/environment/model-input fallback.
 
