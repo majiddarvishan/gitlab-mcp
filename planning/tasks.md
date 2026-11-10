@@ -208,7 +208,8 @@ These tasks must be completed before implementation can be considered. They are 
 - Keep MCP merge disabled unless every required identity check is reliable and all negative cases fail closed.
 
 **Acceptance criteria**
-- The exact target patch and CE/EE distribution are recorded in sanitized form.
+- The exact target patch and EE distribution are recorded in sanitized form (DES-001 is already DONE).
+- The GitLab 17.3+ `humans=true` filter and regular-user `GET /users/:id` are verified on the target instance.
 - At least one qualifying regular human approver can be distinguished from bots/internal users and is numerically distinct from both PAT owner and MR author.
 - The human-account classification method is verified on the target instance; the supported `humans` filter and exact-ID matching are used, and inconsistent/incomplete metadata fails closed.
 - Missing, inaccessible, inactive, ambiguous, stale, or changed approval state blocks merge.
