@@ -13,6 +13,8 @@ ADR-0015 selects a Personal Access Token belonging to the user's human GitLab ac
 
 The user currently has no PAT. A secure local storage and retrieval path must therefore be designed and validated before the first token is created.
 
+The user confirmed on 2026-11-10 that the MCP server will run on the same Linux desktop and under the same account logged into the graphical session. This confirms the deployment context for the proposed Secret Service backend; it does not by itself accept this ADR or authorize PAT creation.
+
 ## Proposed decision
 
 For the initial Linux desktop deployment, use the Freedesktop Secret Service D-Bus API, backed by a compatible login-session keyring provider such as GNOME Keyring.
@@ -55,7 +57,7 @@ For the initial Linux desktop deployment, use the Freedesktop Secret Service D-B
 ## Acceptance criteria
 
 This ADR must remain Proposed until:
-- The user confirms the MCP runtime runs in the same Linux desktop session, or selects another platform/backend.
+- [x] The user confirmed that the MCP runtime runs in the same Linux desktop session and under the same logged-in account.
 - SEC-002 tests a non-secret canary item through the actual keyring provider, verifies the user's D-Bus session and lock/unlock behavior, and accepts the fail-closed policy.
 - TST-009 later verifies that the actual ChatGPT Desktop/Codex-launched MCP process can read an unlocked item without printing it and fails closed under unavailable/locked/missing/ambiguous cases. The runtime must not use the PAT before this host integration test passes.
 - The user explicitly accepts this credential-storage design.
