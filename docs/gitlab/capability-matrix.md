@@ -2,7 +2,7 @@
 
 - **Document status:** Partially accepted
 - **Last reviewed:** 2026-11-10
-- **Compatibility target:** GitLab Self-Managed 18.x
+- **Compatibility target:** GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
 - **API family:** GitLab REST API v4
 - **Scope:** First-release capabilities and explicitly deferred operations.
 
@@ -184,7 +184,7 @@ Approval must be bound to the exact operation and parameters, be single-use, and
 ## Remaining design questions
 
 The following are not resolved by the accepted decisions above:
-1. Exact GitLab 18.x minor/patch release and edition on the company instance.
+1. Exact GitLab build is confirmed as EE v18.8.4-ee with Free subscription (DES-001 DONE).
 2. Whether project allowlist entries will use numeric project IDs only or permit namespaced paths at configuration time (runtime authorization should use canonical IDs).
 3. Which candidate issue, discussion, wiki, release, and advanced repository capabilities belong in the first release.
 4. Whether direct file deletion/move operations should be included in initial code-writing tools.
