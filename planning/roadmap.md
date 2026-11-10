@@ -19,7 +19,8 @@ The detailed, ID-based task register is maintained in [planning/tasks.md](tasks.
 - [ ] Review and accept MCP transport.
 - [ ] Finalize exact capability inventory and tool contracts.
 - [ ] Finalize detailed security and approval model.
-- [ ] Verify current ChatGPT Desktop and Codex client compatibility.
+- [x] Review official ChatGPT Desktop and Codex local MCP compatibility; see [client compatibility](../docs/architecture/client-compatibility.md).
+- [ ] Run local MCP runtime smoke test on the target workstation (TST-009).
 
 ## Phase 1 — Technical design
 - [ ] Select and document MCP SDK.
