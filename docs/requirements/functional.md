@@ -32,8 +32,9 @@ Approved scope baseline for design. Detailed tool schemas and endpoint mapping r
 - MCP may create and update merge requests with explicit approval.
 - MCP may read merge request approval status and applicable merge readiness metadata.
 - MCP must not approve or unapprove a merge request.
-- Before any MCP merge, at least one approval must be recorded in GitLab by a verified human account; bot/internal accounts do not satisfy this requirement.
-- MCP must also receive a separate, explicit user approval for the exact merge operation. The GitLab review approval and MCP merge authorization are independent and both are mandatory.
+- Before any MCP merge, at least one approval must be recorded in GitLab by a verified human reviewer who is distinct from both the MCP PAT owner and the MR author; bot/internal accounts do not satisfy this requirement.
+- MCP must also receive a separate, explicit user approval for the exact merge operation. The independent GitLab review approval and MCP merge authorization are separate requirements and both are mandatory.
+- If the target GitLab API cannot verify reviewer identity and independence, MCP merge must remain disabled.
 - MCP must re-read the MR and approval state immediately before merge. Missing, unverifiable, stale, or changed approval state must block the merge.
 - A merge approval must not be inferred from approval to create/update the MR or from approval of a commit.
 - GitLab protected-branch permissions, approval rules, CI requirements, merge checks, and instance policies remain authoritative and must not be bypassed.
