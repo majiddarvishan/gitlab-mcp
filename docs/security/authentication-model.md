@@ -1,7 +1,7 @@
 # GitLab Authentication and Identity Model
 
 - **Document status:** Selected model documented; validation pending
-- **Target:** GitLab Self-Managed Free 18.8
+- **Target:** GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
 - **Last reviewed:** 2026-11-10
 - **Related task:** SEC-001
 - **Related ADR:** [ADR-0015 (Accepted)](../decisions/0015-gitlab-token-and-execution-identity.md)
@@ -34,13 +34,14 @@ The design must support:
 
 This is an Accepted token/identity choice. It does not authorize implementation. Account-specific permissions, allowlist behavior, secret storage, and merge preconditions still require validation.
 
-## Important GitLab 18.8 constraints
+## Important GitLab v18.8.4-ee constraints
 
 - Fine-grained personal access tokens were introduced as Beta in GitLab 18.10. They are not available in the 18.8 target.
 - Service accounts on GitLab Free were introduced in 18.10 behind a feature flag and became generally available in 18.11. Do not design the 18.8 Free setup around Free-tier service accounts.
 - Project access tokens are available on GitLab Self-Managed Free, but they were not selected.
 - A PAT uses the permissions of its owning user; it is not restricted to a single project by its token type.
-- The api scope is broad. GitLab 18.8 does not provide fine-grained PAT permissions to restrict the token to only the API endpoints used by MCP.
+- The `api` scope grants complete read/write access across the REST API, including all groups/projects available to the user and related registry/package/dependency-proxy API surfaces. It is deliberately broader than the MCP tool inventory.
+- GitLab v18.8.4-ee does not provide fine-grained PAT permissions to restrict the token to only the API endpoints used by MCP.
 
 ## Credential type comparison
 
@@ -58,12 +59,12 @@ GitLab access-token scopes relevant to this project:
 
 | Scope | Meaning | Suitability |
 |---|---|---|
-| api | Complete read/write API access within the owning user's effective GitLab permissions | Selected for the combined REST API read/write workflow |
+| api | Complete read/write API access across the API within the owning user's permissions, including accessible groups/projects and registry/package/dependency-proxy surfaces | Selected for the combined REST API read/write workflow; broad credential blast radius |
 | read_api | Read-only API access | Insufficient for first-release write operations |
 | read_repository | Repository read access through supported repository access methods | Not enough for MR/issue/commit/merge API writes |
 | write_repository | Repository pull/push through Git-over-HTTP | Does not authenticate API requests; not a substitute for api |
 
-Use api only for the first-release REST workflow; do not add unrelated scopes. The scope does not grant permissions the user does not already have, but it can expose the full API surface allowed by that user's GitLab memberships and role. The MCP server must expose only the approved tool surface and enforce its allowlist and approval rules.
+Use `api` only for the first-release REST workflow; do not add unrelated scopes. The version-tagged v18.8.4-ee documentation explicitly describes this scope as complete API read/write access, including all groups and projects within the user's access. The scope does not grant permissions the user does not already have, but it can expose the full API surface allowed by that user's GitLab memberships and role. The MCP server must expose only the approved tool surface and enforce its allowlist and approval rules.
 
 ## Effective permissions and least privilege
 
@@ -114,7 +115,7 @@ The selected PAT belongs to a human user, so GitLab may expose the execution ide
 
 ## Credential lifecycle
 
-GitLab's current PAT documentation describes a 365-day default expiry date when no date is supplied (unless instance settings change this) and expiry at midnight UTC on the expiry date. The target GitLab 18.8 instance's actual expiry requirement and maximum lifetime must be verified before provisioning; see [SEC-012](../environment/validation-runbook.md#6-validate-pat-expiry-and-rotation-policy-sec-012).
+The v18.8.4-ee PAT documentation states that Free-tier PATs have a 365-day default and maximum lifetime. A 400-day maximum is available in GitLab 17.6 and later through the `buffered_token_expiration_limit` feature flag, disabled by default. PATs expire at midnight UTC on the expiry date. The actual flag state and creation UI must still be checked on the target instance; see [SEC-012](../environment/validation-runbook.md#6-validate-pat-expiry-and-rotation-policy-sec-012).
 
 The design must define:
 - Secure initial PAT provisioning without entering the token into model-visible chat.
@@ -144,5 +145,6 @@ The target-instance test procedure is maintained in the [validation runbook](../
 - [Project access tokens](https://docs.gitlab.com/user/project/settings/project_access_tokens/)
 - [Service accounts](https://docs.gitlab.com/user/profile/service_accounts/)
 - [Fine-grained personal access tokens](https://docs.gitlab.com/auth/tokens/fine_grained_access_tokens/)
+- [v18.8.4-ee PAT documentation](https://gitlab.com/gitlab-org/gitlab/-/raw/v18.8.4-ee/doc/user/profile/personal_access_tokens.md)
 - [Roles and permissions](https://docs.gitlab.com/user/permissions/)
 - [Protected branch rules](https://docs.gitlab.com/user/project/repository/branches/protection_rules/)
