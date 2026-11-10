@@ -30,7 +30,7 @@ The MCP server must independently enforce the accepted canonical project allowli
 - Use the least-privileged practical human GitLab account. Review its memberships and project roles before provisioning the PAT; do not elevate roles or weaken branch protections merely to make MCP operations succeed.
 - Treat the PAT as a credential that can reach every project and group the owning account can access, subject to token scopes and GitLab authorization. The impact of PAT disclosure is therefore broader than any one MCP allowlist entry.
 - Keep the MCP allowlist mandatory for reads and writes, including nested resources and cross-project references. Deny unknown, ambiguous, and unlisted projects before returning their data or issuing mutations.
-- Use an expiration date, document renewal/rotation, and revoke the PAT immediately if it is exposed or no longer required.
+- Use an expiration date and document renewal. For planned replacement, create and validate a second PAT before revoking the old one; the GitLab Rotate UI invalidates the old token immediately. Revoke a compromised PAT immediately.
 - GitLab activity will show the PAT owner's human account as the actor. Do not label or represent this activity as a bot identity.
 - The PAT owner must not be treated as an independent reviewer merely because GitLab records that account as a human user.
 
