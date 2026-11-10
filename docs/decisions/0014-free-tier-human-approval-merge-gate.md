@@ -20,7 +20,7 @@ Those two approvals serve different purposes:
 
 **MCP must not merge a merge request unless both of the following conditions are satisfied:**
 
-1. At least one human GitLab user has an approval recorded for the current merge request.
+1. At least one verified human GitLab reviewer, distinct from both the MCP PAT owner and the MR author, has an approval recorded for the current merge request.
 2. The user explicitly approves the exact merge operation through the MCP host.
 
 These are independent requirements. Neither substitutes for the other.
@@ -34,7 +34,8 @@ The first-release implementation must:
 - Inspect the `approved_by` list; do not rely only on the boolean `approved`, because its semantics and available response fields differ by CE/EE distribution.
 - Resolve each candidate approver through the GitLab Users API and verify the account is a regular human account (for example, `bot=false` on `GET /users/:id` or an equivalent supported human-user filter).
 - Reject bot/internal accounts and fail closed if the approver identity cannot be reliably classified.
-- Require at least one verified human approval. A missing, empty, unavailable, or ambiguous approval record is not sufficient.
+- Exclude the MCP PAT owner and the MR author from qualifying approvers, even when either account is otherwise classified as human.
+- Require at least one verified human approval from a qualifying independent reviewer. A missing, empty, unavailable, or ambiguous approval record is not sufficient.
 - Never create, modify, or remove an MR approval. The user must record the review approval in GitLab through a human-operated workflow.
 
 The GitLab approval API's `approved_by` array includes all approvers, regardless of whether those approvals satisfy approval rules. GitLab Free does not provide the Premium/Ultimate `approval_state` endpoint, so MCP must not depend on that endpoint or on required approval-rule fields.
@@ -44,14 +45,14 @@ The GitLab approval API's `approved_by` array includes all approvers, regardless
 Before requesting the MCP merge approval:
 - Wait until GitLab has finished processing the current MR diff.
 - Read the current MR state, source and target refs, source HEAD SHA, merge readiness, pipeline status, and approval state.
-- Verify at least one human approver is recorded for the current MR.
-- Present the approver identity, current source HEAD SHA, target branch, and merge options in the preview.
+- Verify at least one qualifying independent human approver (not the PAT owner or MR author) is recorded for the current MR.
+- Present the qualifying approver identity, current source HEAD SHA, target branch, and merge options in the preview.
 
 Immediately before executing the merge:
 - Re-read the MR and approval state.
 - Verify the source HEAD SHA, target branch, project, MR IID, and merge options still match the approved preview.
-- Verify the human approval is still present.
-- Reject and request a new review/approval if the MR changed, the approval disappeared, the state is ambiguous, or GitLab reports the MR is not mergeable.
+- Verify the same qualifying independent human approval is still present.
+- Reject and request a new review/approval if the MR changed, the approval disappeared, the approver is the PAT owner or MR author, the identity state is ambiguous, or GitLab reports the MR is not mergeable.
 
 GitLab documentation states that approvals are normally removed when new changes are added after approval; the Premium/Ultimate setting that changes approval-removal behavior is not part of the Free-tier baseline. The implementation must still re-read the state rather than assume an approval remains valid.
 
@@ -68,8 +69,9 @@ The MCP approval must be:
 ## Fail-closed behavior
 
 MCP must refuse to merge if:
-- There is no recorded human approval.
+- There is no recorded qualifying human approval.
 - All recorded approvers are bots or internal accounts.
+- The only human approvers are the PAT owner and/or MR author.
 - The approver identity cannot be checked.
 - The approval state cannot be read from GitLab.
 - The MR head or relevant parameters changed after approval.
@@ -82,8 +84,8 @@ GitLab remains authoritative for user permissions, protected branch rules, CI re
 - GitLab Free's optional approval mechanism is supplemented by an application-level MCP gate.
 - Every MCP merge requires two independent approvals: a recorded human GitLab review approval and a separate MCP operation approval.
 - MCP may read approval state but has no approval mutation tools.
-- The merge preflight must include human identity verification.
-- If the deployed CE/EE distribution does not expose enough information to verify a human approver safely, merge remains disabled until a safe verification method is established.
+- The merge preflight must verify reviewer independence from both the PAT owner and MR author.
+- If the deployed CE/EE distribution does not expose enough information to verify a qualifying independent human approver safely, merge remains disabled until a safe verification method is established.
 - GitLab 18.8 Free remains a supported compatibility target, but exact patch and CE/EE distribution must be confirmed.
 
 ## References
