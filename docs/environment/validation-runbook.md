@@ -90,7 +90,7 @@ Immediately before any future MCP merge:
 
 ### 3.6 Optional local request helper
 
-For manual checks, use the [one-off API caller](../security/reviewer-verification.md#7-optional-one-off-api-caller-local-terminal-only). It prompts for the PAT without echoing it and sends the header through stdin to curl. Use only an existing PAT while SEC-002 is open; do not create a token before its storage procedure is accepted.
+For manual checks, use the [one-off API caller](../security/reviewer-verification.md#6-optional-one-off-api-caller-local-terminal-only). It prompts for the PAT without echoing it and sends the header through stdin to curl. Use only an existing PAT while SEC-002 is open; do not create a token before its storage procedure is accepted.
 
 MCP merge remains disabled until SEC-009 passes on the target instance and the merge gate can enforce every negative case.
 
