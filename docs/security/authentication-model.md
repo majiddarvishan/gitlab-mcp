@@ -134,7 +134,7 @@ The target-instance test procedure is maintained in the [validation runbook](../
 1. Which projects and groups can the PAT owner currently access, and what is the effective role on each intended project?
 2. Does the explicit MCP allowlist deny a project that the PAT owner can access but has not allowlisted?
 3. Which repository write operations are permitted by the user's actual roles?
-4. Can the target Free 18.8 API verify a human reviewer distinct from the PAT owner and MR author?
+4. Does the target EE v18.8.4 API return a qualifying regular human reviewer distinct from the PAT owner and MR author, using the documented `humans=true` filter?
 5. What expiry policy and rotation interval are enforced by the target instance?
 
 ## Official references
