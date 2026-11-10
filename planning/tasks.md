@@ -314,13 +314,15 @@ These tasks must be completed before implementation can be considered. They are 
 
 **Work**
 - Confirm whether the `buffered_token_expiration_limit` feature flag is enabled. The v18.8.4-ee PAT documentation states a 365-day default/max lifetime for Free, with a 400-day limit available from 17.6 via that flag; token expiry occurs at midnight UTC.
-- Define renewal, replacement, and immediate revocation for the single user PAT.
+- Define planned replacement using a second PAT followed by validation and revocation of the old token; distinguish this from GitLab's Rotate UI, which immediately invalidates the old token.
+- Define immediate revocation for a compromised PAT, with no overlap.
 - Verify the MCP can distinguish expired, revoked, rotated, and under-scoped tokens without exposing token values.
 - Document that rotation/revocation affects MCP access to all configured projects because one PAT is used.
 
 **Acceptance criteria**
 - The user PAT lifecycle is documented.
-- Rotation does not cause uncontrolled or ambiguous credential state.
+- Planned replacement validates the new PAT before revoking the old one; GitLab Rotate UI is documented as immediate invalidation and is not used for zero-downtime replacement.
+- Compromised PATs are revoked immediately.
 - Revoked/expired tokens fail with clear, non-secret diagnostics.
 
 ## SEC-003 — Define project allowlist configuration and administration
