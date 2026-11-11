@@ -1,152 +1,189 @@
 # Existing GitLab MCP Implementation Evaluation
 
-- **Status:** Preliminary source review; DES-012 remains OPEN
-- **Review date:** 2026-11-10
+- **Status:** Source-level review completed for the current snapshots; DES-012 remains OPEN pending target-instance compatibility and final architecture review
+- **Review date:** 2026-11-12
 - **Target:** GitLab Self-Managed Enterprise Edition v18.8.4-ee, Free subscription tier
-- **Project decision:** No product selected or adopted
-- **Scope:** Public documentation and pinned upstream source snapshots; no code was built or executed
+- **Project decision:** No product selected or adopted; no fork authorized
+- **Scope:** Public documentation and pinned upstream source review. No candidate was built, run against the target GitLab, or given a PAT.
 
 ## 1. Executive summary
 
-Existing GitLab MCP products do exist. GitLab ships an official server, and multiple independent open-source servers expose GitLab REST/GraphQL operations through MCP.
+GitLab MCP products exist, including an official GitLab server and independent open-source implementations. None can be adopted unchanged under this project's accepted security decisions.
 
-The official GitLab server is not a viable baseline for this project's exact target: its feature history says it moved from Premium to Free in GitLab 19.2. The target is 18.8.4-ee with a Free subscription.
+The current findings favor **zereight/gitlab-mcp as the first fork-and-harden candidate**. Its built-in project allowlist, strict-scope mode, download-token project binding, and regression tests are closer to our required project boundary. The latest 2.x release also records fixes for past cross-project scope defects. Important gaps remain: model-generated confirmation, approval/unapproval tools, a Raw REST escape hatch that does not inspect project IDs in body/query parameters, no mandatory default-branch write guard, and no direct Secret Service integration.
 
-Two independent projects merit further source-level evaluation:
+**jmrplens/gitlab-mcp-server remains a serious alternative if Go is selected**, and has a more extensive documented assurance case. However, the reviewed configuration has no fixed MCP project allowlist; per-action `project_id` parameters are not an authorization boundary. It also permits a model-supplied `confirm: true` to bypass the destructive-action prompt, has a YOLO bypass setting, exposes MR approval mutations, and does not integrate Linux Secret Service.
 
-1. **zereight/gitlab-mcp** — TypeScript/Node.js, MIT, with a built-in project allowlist and strict-scope mode. It is the more promising starting point for the project's mandatory project-boundary control, but its optional raw API tool has documented bypass behavior and its confirmation parameter is not independent user approval.
-2. **jmrplens/gitlab-mcp-server** — Go, MIT, single-binary distribution, large tier-aware action catalog. It aligns with the currently Proposed Go language choice and publishes a detailed assurance case, but the reviewed material did not identify a first-class fixed MCP project allowlist. Its own assurance case explicitly says that `confirm: true` is written by the model and is a request to the model, not a guarantee of user approval.
+The most important project rule is unchanged: an MCP tool argument such as `confirm=true` or `_confirmed=true` is not user approval. The server must receive and verify a separate approval that the model cannot invent, and that approval must be bound to the exact operation and consumed once.
 
-Neither server is safe to adopt unchanged under the accepted ADRs. The merge gate in ADR-0014 is the decisive blocker for both. An operation-specific server-side approval primitive must not be replaced by a tool argument that the model can generate.
+## 2. Mandatory target constraints
 
-## 2. Target constraints that govern this evaluation
+Any adopted or forked candidate must preserve:
 
-The candidate must preserve all of the following:
-
-- GitLab Self-Managed EE v18.8.4-ee with Free subscription tier.
+- GitLab Self-Managed EE v18.8.4-ee with the Free subscription tier. API compatibility and license-tier availability must be checked separately.
 - One Personal Access Token owned by the user's regular human GitLab account, initially with `api` scope (ADR-0015).
-- A server-side canonical project allowlist across every read and write path, including nested and cross-project references. The PAT itself is not project-scoped.
-- No write to a default/protected branch; repository code changes use a working branch and MR.
-- MCP must never approve or unapprove a GitLab MR on behalf of a human.
-- Before merge: at least one independently verified, regular human GitLab approver who is distinct from both PAT owner and MR author, plus a separate exact-operation, single-use MCP user approval enforced on the server (ADR-0014).
-- First-release CI/CD is read-only pipeline/job metadata and status; no trigger/retry/cancel, job logs, artifacts, or secret variables.
-- PAT retrieval directly from Linux Secret Service in the same interactive desktop D-Bus session. No plaintext file, environment variable, argument, model-visible prompt, or log fallback.
-- No implementation or fork is authorized during this evaluation.
+- A server-side canonical project allowlist across every read/write route, including nested resources and cross-project parameters. The PAT itself is not project-scoped.
+- Repository code changes only on a dedicated working branch followed by an MR. The MCP must reject writes to the default/protected branch even if GitLab branch protection is misconfigured.
+- MCP must never approve, unapprove, or reset GitLab MR review approvals on behalf of a human.
+- Before MCP merge: at least one independently verified regular human GitLab approver distinct from both PAT owner and MR author, plus a separate exact-operation, single-use MCP user approval enforced server-side (ADR-0014).
+- First-release CI/CD is read-only pipeline/job metadata and status. No trigger/retry/cancel, logs/traces, artifacts, or secret variables.
+- PAT retrieval directly from Linux Secret Service in the same interactive desktop D-Bus session. No plaintext file, process argument, environment variable, model-visible prompt, or log fallback.
+- No upstream code import, fork, source modification, PAT creation, or deployment as part of DES-012.
 
 ## 3. Official GitLab MCP server
 
-**Sources:** [Official documentation](https://docs.gitlab.com/user/model_context_protocol/mcp_server/).
+**Source:** [Official GitLab documentation](https://docs.gitlab.com/user/model_context_protocol/mcp_server/).
 
-GitLab's published feature history states:
-- Introduced as an experiment in 18.3.
-- Changed to beta in 18.6.
+GitLab's published feature history says the MCP server:
+- Was introduced as an experiment in GitLab 18.3.
+- Became Beta in 18.6.
 - Moved from Premium to Free in 19.2.
-- Marked generally available in 19.5.
+- Became generally available in 19.5.
 
-**Assessment:** The 18.8 target is earlier than the Free-tier availability change. The official server therefore cannot be treated as available on the target Free subscription. It is not the current baseline candidate unless the GitLab instance is upgraded to a version where the feature is Free and enabled, which would be a separate user decision and target change.
+**Assessment:** The project's target is 18.8.4-ee with a Free subscription, before the move to Free. The official server is therefore not a usable baseline on the exact target without a separate GitLab upgrade/tier decision. Its status on a future upgraded instance should be reevaluated then.
 
 ## 4. Candidate A — zereight/gitlab-mcp
 
+### 4.1 Snapshot and distribution
+
 - **Repository:** https://github.com/zereight/gitlab-mcp
-- **Reviewed branch:** `main`
-- **Pinned commit:** `9bd6a5eba5a9d99d4615a3377c90bacab6981e1d`
-- **Commit date:** 2026-11-10
-- **License:** MIT
-- **Implementation:** TypeScript / Node.js
-- **Documented surface at this snapshot:** 40 default tools; 288 total catalog tools.
-- **Primary evidence:** [README at pinned commit](https://github.com/zereight/gitlab-mcp/blob/9bd6a5eba5a9d99d4615a3377c90bacab6981e1d/README.md), [security policy](https://github.com/zereight/gitlab-mcp/blob/9bd6a5eba5a9d99d4615a3377c90bacab6981e1d/SECURITY.md), [raw API tool documentation](https://github.com/zereight/gitlab-mcp/blob/9bd6a5eba5a9d99d4615a3377c90bacab6981e1d/docs/tools/api.md), [merge request tools](https://github.com/zereight/gitlab-mcp/blob/9bd6a5eba5a9d99d4615a3377c90bacab6981e1d/docs/tools/merge-requests.md), and [allowlist tests](https://github.com/zereight/gitlab-mcp/tree/9bd6a5eba5a9d99d4615a3377c90bacab6981e1d/test).
+- **Reviewed main commit:** `b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9` (2026-11-11)
+- **Latest published release observed:** [v2.3.25](https://github.com/zereight/gitlab-mcp/releases/tag/v2.3.25), published 2026-11-11
+- **License/runtime:** MIT; TypeScript/Node.js; Node.js >=20
+- **Default surface at the reviewed snapshot:** approximately 40 tools; 288 total catalog tools across toolsets.
+- **Security support statement:** the latest 2.x release is supported; older releases are not.
 
-### 4.1 Relevant strengths
+Primary pinned sources:
+- [README](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/README.md)
+- [Security policy](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/SECURITY.md)
+- [Project context and auth](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/server/gitlab-request-context.ts)
+- [Raw API handler](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/tools/gitlab-api-request.ts)
+- [Download proxy](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/downloads/proxy.ts)
+- [Cross-project allowlist regression tests](https://github.com/zereight/gitlab-mcp/blob/b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9/test/allowed-project-target-scope.test.ts)
 
-- Supports self-managed GitLab API URLs and local STDIO mode; Codex configuration is documented.
-- Supports PAT authentication and a token-file option.
-- Has `GITLAB_ALLOWED_PROJECT_IDS`, with `ENABLE_STRICT_PROJECT_SCOPE` to close discovery gaps and refuse group-/instance-wide operations that cannot be safely scoped.
-- Has automated tests for denied project access and project-target scoping, including nested-resource paths.
-- Supports toolset selection and a denylist regex, which can reduce the exposed operation surface.
-- Explicitly documents the security risk of its raw API tool instead of presenting that feature as safe by default.
+### 4.2 Project-scope controls verified in source
 
-### 4.2 Blocking security findings
+The current code contains a real process-level `GITLAB_ALLOWED_PROJECT_IDS` allowlist and a request-local effective scope:
 
-**Raw API escape hatch.** The `gitlab_api_request` toolset is opt-in, but its own documentation says it bypasses normal tool allowlists, individual tool safety checks, and some group/project restrictions. With a project scope, the path must be under `/projects/:id`, but project IDs appearing in body/query parameters are not checked. The proposed configuration must not enable the `api` toolset, and the fork review must check for any alternative raw REST or GraphQL path.
+- `getEffectiveProjectId` rejects a project value not present in the effective allowlist before the project-scoped API operation proceeds.
+- One allowlisted project can be used as a locked default; multiple allowed projects require the caller to identify one.
+- `ENABLE_STRICT_PROJECT_SCOPE=true` filters project listings/search results and rejects group-wide or instance-wide tools that cannot be constrained to the allowed projects.
+- The public GraphQL execution tool is rejected when a project-scoped deployment is active. This is conservative, but means GraphQL features cannot be used in that configuration.
+- Download URLs use short-lived encrypted download tokens carrying the effective project allowlist and resource identity; the download proxy checks the bound project again.
+- The allowlist compares supplied project identifiers against configured values. An ID/path mismatch may fail closed even when both refer to the same project; canonicalization policy should be standardized before adoption.
 
-**Approval is model-controlled.** `GITLAB_TOOL_POLICY_APPROVE` requires the call to carry `_confirmed: true`. The model supplies tool arguments, so this field is not proof that a person approved the exact operation. It does not meet ADR-0003 or the separate merge confirmation in ADR-0014.
+The current test `allowed-project-target-scope.test.ts` checks that an allowlisted source project cannot create an issue link or MR targeting an unlisted project, and that work-item note/reaction operations cannot be redirected to an unrelated note ID. The changelog records the corresponding previous defect as GHSA-ffr3-5f57-gf93 and says the fix is included in v2.3.25.
 
-**Human review operations are present.** The MR toolset contains `approve_merge_request` and `unapprove_merge_request`. Both must be denied at the server enforcement layer, not just hidden from `tools/list`.
+This is meaningful evidence of project-boundary engineering, but not proof that every tool path has been audited against this project's full SEC-010 matrix.
 
-**Credential backend mismatch.** Documented local authentication uses `GITLAB_PERSONAL_ACCESS_TOKEN` or `GITLAB_PERSONAL_ACCESS_TOKEN_FILE`. There is no documented direct Linux Secret Service integration. Passing a keyring value through an environment variable or command argument would violate the current credential-storage proposal; a direct Secret Service adapter or a different accepted credential design would be needed.
+### 4.3 Blocking security gaps
 
-**Permission mode requires an explicit choice.** The documented default is `full`; `modify` allows creates/updates and blocks deletes, but it does not supply the project's independent operation approval. The fork would need a closed, explicit first-release tool registry and server-side enforcement, not a permissive default.
+**Raw REST escape hatch.** `gitlab_api_request` is explicitly opt-in and must not be enabled. Its handler constrains request paths to an allowed `/projects/:id/...` route when a project allowlist is active, but it does not inspect project IDs in request body/query parameters (for example `target_project_id` or `from_project_id`). It also bypasses other per-tool safety checks. A path-only check is not sufficient for this project. The safe proposal is to remove this tool from the fork, not merely hide it.
 
-### 4.3 Preliminary fit
+**Model-generated write confirmation.** `GITLAB_TOOL_POLICY_APPROVE` requires the tool call to carry `_confirmed: true`. The source reads that value directly from tool arguments; the model creates those arguments. Therefore the setting is a model-controlled flag, not independent user approval. It does not satisfy ADR-0003/ADR-0014. MCP client approval behavior cannot replace the server-side approval gate.
 
-**Best current fit for project allowlist reuse**, subject to full audit and a server-side merge/approval redesign. It is TypeScript/Node rather than the currently Proposed Go language. The existing allowlist is useful evidence and reusable work, not proof that every edge case in our SEC-010 matrix is covered.
+**MR review mutation tools.** The merge-request toolset includes `approve_merge_request` and `unapprove_merge_request`. They must be denied by server enforcement or removed from the fork. Hiding them from `tools/list` alone is not enough. Prefer deleting the handlers/registry entries and adding tests that direct invocation fails before any GitLab request.
+
+**Default-branch write policy.** Repository write tools accept branch values from the caller. The reviewed code does not establish the mandatory project rule that the server itself rejects default/protected-branch writes. GitLab branch protection is an additional control, not a replacement for the accepted MCP branch policy.
+
+**Credential backend mismatch.** The token loader accepts a CLI token, environment variable, or token file. The reviewed source does not retrieve the PAT directly from Linux Secret Service. The CLI argument, environment, and plaintext-file paths must not be used under ADR-0016; a direct D-Bus provider and fail-closed behavior are required.
+
+**Visibility versus denial.** `GITLAB_TOOL_POLICY_HIDDEN` is a visibility mechanism; it is not the security boundary for prohibited operations. The changelog records GHSA-3gfg-wh5g-cf74, where hidden tools could be called even when their toolsets were disabled, fixed in v2.3.25. For prohibited operations, remove the tool or enforce a server-side deny rule and test direct calls. Do not rely on hiding alone.
+
+### 4.4 Maintenance and security history
+
+The repository has active releases and documents that only the latest 2.x line receives security fixes. The v2.3.25 changelog includes fixes for multiple security advisories, including the cross-project `target_project_id` issue and hidden-tool exposure behavior. This history is not by itself a reason to reject the project; it means the fork must start from a supported, patched snapshot and retain upstream security updates.
+
+The deployment must pin a release/commit rather than use `latest`. Before adopting a binary, verify that its source commit includes the fixes relied on by this assessment and verify release provenance/checksums.
+
+### 4.5 Preliminary fit
+
+**Best current starting point for reusing project-scope controls.** A fork would still need a real server-side approval system, protected/default branch guard, human-only MR review surface, and D-Bus credential provider. The API escape hatch should be removed. The project is TypeScript/Node.js, so choosing it would require revisiting Proposed ADR-0004 (Go).
 
 ## 5. Candidate B — jmrplens/gitlab-mcp-server
 
+### 5.1 Snapshot and distribution
+
 - **Repository:** https://github.com/jmrplens/gitlab-mcp-server
-- **Reviewed branch:** `main`
-- **Pinned commit:** `088fd585850fce31961b6ebd4d796017be45eaa0`
-- **Commit date:** 2026-11-10
-- **License:** MIT
-- **Implementation:** Go; documented single-binary distribution
-- **Documented surface at this snapshot:** more than 1,100 actions across GitLab REST and GraphQL, with a small dynamic discovery/execution surface.
-- **Primary evidence:** [README at pinned commit](https://github.com/jmrplens/gitlab-mcp-server/blob/088fd585850fce31961b6ebd4d796017be45eaa0/README.md), [assurance case](https://github.com/jmrplens/gitlab-mcp-server/blob/088fd585850fce31961b6ebd4d796017be45eaa0/site/src/content/docs/operations/assurance-case.mdx), [security model](https://github.com/jmrplens/gitlab-mcp-server/blob/088fd585850fce31961b6ebd4d796017be45eaa0/site/src/content/docs/operations/security.mdx), [dynamic action dispatcher](https://github.com/jmrplens/gitlab-mcp-server/blob/088fd585850fce31961b6ebd4d796017be45eaa0/internal/tools/dynamic/register.go), and [scope filter](https://github.com/jmrplens/gitlab-mcp-server/blob/088fd585850fce31961b6ebd4d796017be45eaa0/internal/tools/scope_filter.go).
+- **Reviewed main commit:** `257c58f0b376983d98d177ce10f45c6f011ef92b` (2026-11-11)
+- **Latest published release observed:** [v3.4.0](https://github.com/jmrplens/gitlab-mcp-server/releases/tag/v3.4.0), published 2026-10-31; the reviewed main snapshot is newer than that release.
+- **License/runtime:** MIT; Go; single-binary distribution.
+- **Tool surface:** tier-aware catalog with a default dynamic find/execute interface and a much larger action catalog (over 1,100 actions across the published surfaces).
+- **Governance note:** the project's own assurance case records a bus factor of one maintainer.
 
-### 5.1 Relevant strengths
+Primary pinned sources:
+- [Configuration](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/internal/config/config.go)
+- [Confirmation gate](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/internal/toolutil/confirm.go)
+- [MR action registration](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/internal/tools/mergerequests/action_specs.go)
+- [MR approval actions](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/internal/tools/mrapprovals/action_specs.go)
+- [Assurance case](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/site/src/content/docs/operations/assurance-case.mdx)
 
-- Go implementation aligns with ADR-0004's currently Proposed language.
-- Supports self-managed instances and GitLab CE/EE; action catalogs are tier-aware.
-- Uses a canonical action catalog projected into dynamic, meta, and individual tool surfaces.
-- Has documented read-only and safe-preview modes, a detailed threat model and assurance case, automated tests, and release-integrity controls.
-- The documented Free/CE baseline includes common project, issue, MR, pipeline, repository, and user workflows.
+### 5.2 Project-scope controls
 
-### 5.2 Blocking security findings
+The reviewed `Config` supports GitLab URL/token, tier, tool surface, read-only/safe modes, tool exclusion by name, and other server settings. The inspected configuration does **not** define a fixed project-ID allowlist or project-scope policy. `ExcludeTools` is a tool-name filter, not a project authorization boundary.
 
-**No first-class fixed MCP project allowlist identified in reviewed source.** The inspected `internal/tools/scope_filter.go` filters actions by PAT scopes such as `read_api`, `api`, and `admin_mode`; it is not a project-ID allowlist. A `project_id` argument chooses the GitLab resource but is not, by itself, an authorization boundary. A complete configuration and route audit is still required before concluding that no other project restriction exists.
+Project-scoped actions require a `project_id` parameter, but a parameter is only a resource selector. The server needs a central authorization layer that checks every requested project against a canonical allowlist, including target IDs, nested resources, GraphQL-backed operations, and any cross-project relation. No such fixed MCP project allowlist was identified in the reviewed configuration/source.
 
-**Approval is explicitly not an independent security boundary.** The project's own assurance case says that `confirm: true` is an argument written by the model, and therefore passes without a user prompt; it calls this a request to the model rather than a guarantee. The default dynamic surface does not prompt, and the other surfaces can also accept a model-supplied confirmation. This does not satisfy the project's exact-operation, server-enforced approval requirement.
+The catalog includes global and group-wide operations such as global MR listing; excluding a few global tools would still not restrict ordinary project-scoped actions to the allowlist.
 
-**Credential backend mismatch.** The documented stdio setup reads `GITLAB_TOKEN` from the environment or a local environment file. The reviewed security documentation does not provide direct Secret Service access. This would need a credential-provider change before the PAT can be used under the current design.
+### 5.3 Blocking security gaps
 
-**Large operation surface.** More than 1,100 catalog actions are available across resource domains, including operations outside this project's first-release scope. The implementation would need a tightly bounded catalog, deny-by-default registration, and regression tests proving that omitted operations remain unreachable on every tool surface.
+**Model-controlled confirmation.** `ConfirmDestructiveAction` first checks `GITLAB_MCP_YOLO_MODE` / `AUTOPILOT`, then accepts `confirm: true` from the tool arguments, and only otherwise attempts MCP elicitation. Elicitation can present a real prompt when the client supports it, but the model-supplied boolean bypasses that prompt. The project's assurance case explicitly recognizes that the model can write the confirmation argument. Therefore the current behavior is not a mandatory independent user approval. A hardened fork would have to remove the boolean bypass, reject YOLO for the merge path, and bind a direct user response to the exact MR/project/head SHA/merge parameters for one execution.
 
-### 5.3 Preliminary fit
+**MR approval mutations.** The action catalog registers `merge_request.approve` and `merge_request.unapprove`. The approval package also registers approval-reset behavior. The first two can perform review approval mutations with the calling user's identity, contrary to ADR-0011. These operations must be removed or denied by the server, not merely hidden.
 
-**Best language/ecosystem fit** if Go is retained, with strong documentation and security-review discipline. It is not a drop-in fit for the mandatory project allowlist or approval lifecycle; both would require substantial security engineering and evidence.
+**No PAT-to-Secret-Service integration.** Standard stdio configuration reads `GITLAB_TOKEN` from the process environment. The project deliberately does not accept a token command-line flag, which avoids one exposure path, but there is no direct Linux Secret Service backend in the reviewed code. A direct D-Bus provider would still need to be added.
 
-## 6. Preliminary comparison
+**Default-branch policy.** The reviewed architecture relies heavily on GitLab permissions and action behavior. No project-specific server-side guard was identified that universally forbids writes to a configured default/protected branch. This needs a separate source audit and, if absent, a server-side policy implementation.
 
-| Criterion | GitLab official (18.8 Free) | zereight | jmrplens |
+**Large surface.** The action catalog contains many domains beyond this project's first-release scope. A restrictive catalog and server-side deny-by-default policy would be required across dynamic, meta, and individual surfaces. Tool-name filtering alone is not enough if a route remains executable through another surface.
+
+### 5.4 Useful Free-tier approval read path
+
+The source distinguishes Premium/Ultimate per-MR approval-state/rules actions from the basic approval configuration endpoint. `merge_request.approval_config` is documented as available on all tiers and reads the MR approvals data; the Premium/Ultimate approval-state endpoints are marked as such. This gives a possible starting point for reading `approved_by` on the target EE Free tier, but it does not implement our reviewer identity protocol. The server would still need to resolve each approver using the target-instance Users API checks in SEC-009 and fail closed on any ambiguous/incomplete identity.
+
+### 5.5 Preliminary fit
+
+**Best language fit if Go is retained**, with a detailed assurance case, extensive automated tests, and a single-binary distribution. However, adding a complete project-authorization layer, a mandatory exact-operation approval system, human-only MR review restrictions, branch protection policy, and Secret Service provider is substantial security engineering. The project currently has no proven project allowlist, so it is not the nearer drop-in candidate.
+
+## 6. Comparison against project requirements
+
+| Requirement | GitLab official (18.8 Free) | Zereight | JMRPlens |
 |---|---|---|---|
-| Available on target Free tier | No; moved to Free in 19.2 | Self-managed API compatibility documented; verify target instance | Self-managed and CE/EE Free documented; verify target instance |
-| Implementation | Integrated GitLab feature | TypeScript / Node.js | Go |
-| Local STDIO / Codex | Not suitable on target tier | Documented | Documented |
-| Fixed project allowlist | No usable target-tier path established | Yes; strict scope has documented limits and tests | No first-class fixed project allowlist identified in inspected source |
-| Raw REST / GraphQL risk | Not assessed for target | Raw API is explicit opt-in and unsafe with allowlist; must remain disabled | Full action catalog includes REST/GraphQL; needs a server-side project boundary |
-| Independent user approval | Does not establish our separate MCP gate | No; `_confirmed` is model input | No; `confirm: true` is model input |
-| Human MR approval handling | Not sufficient for target policy | Approve/unapprove tools exist; must be denied | Approval actions exist; must be denied |
-| Secret Service integration | Not established | Not documented | Not documented |
-| Primary advantage | Native, maintained integration | Project allowlist and narrower documented starting surface | Go, single binary, assurance case and extensive tests |
-| Primary blocker | Not Free on v18.8 | Model-controlled confirmation; raw API bypass; credential adapter | Missing proven project allowlist; model-controlled confirmation; credential adapter |
+| Available on exact target Free tier | No; Free from 19.2 | Self-managed API model; 18.8 target test pending | Self-managed/Free catalog; 18.8 target test pending |
+| Local STDIO / Codex documented | Not suitable on target tier | Yes | Yes |
+| Fixed project allowlist | No target-tier baseline | Yes, plus strict-scope mode and tests | No fixed MCP project allowlist identified |
+| Cross-project parameter checks | Not established | Several known cases have regression tests; full audit pending | No central allowlist to enforce |
+| Raw REST escape hatch | Not assessed for target | Explicit opt-in; body/query project fields are not checked; must be removed | No fixed project boundary to protect |
+| Generic GraphQL path under project scope | Not established | Blocked when project scope is enabled | Must be covered by new central project authorization |
+| Exact server-side user approval | Not established | No; `_confirmed` is model input | No; `confirm` is model input and YOLO bypass exists |
+| Human-only MR approval | Not established | Approve/unapprove tools exist; must be removed/denied | Approve/unapprove/reset actions exist; must be removed/denied |
+| Direct Secret Service | Not established | No; env/CLI/file token inputs | No; env token input |
+| Go ecosystem | N/A | No; TypeScript/Node.js | Yes |
+| Main adoption blocker | Target Free availability | Approval gate, raw API, branch gate, Secret Service | Project allowlist, approval gate, review controls, Secret Service |
 
-## 7. Required next review steps
-
-DES-012 remains OPEN. Complete these checks before making an adoption recommendation:
-
-1. **Pin and inspect all enforcement paths.** Trace every REST/GraphQL call from public tools through canonical project resolution and authorization to the HTTP client. Include redirects, download URLs, aliases, nested IDs, source/target project IDs, and any tool that accepts arbitrary queries or payloads.
-2. **Review approval mechanism feasibility.** Identify whether the candidate can host a separate server-owned approval registry with unpredictable, short-lived, single-use approval handles bound to the canonical project ID, MR IID, source HEAD SHA, exact merge parameters, and operation. A model-generated boolean is never accepted as approval.
-3. **Verify the GitLab human reviewer path.** The merge gate must consume the exact protocol in `docs/security/reviewer-verification.md`; the candidate's existing approval summary is not enough until it proves regular human identity and excludes the PAT owner and MR author.
-4. **Review credential integration.** Confirm a direct Secret Service D-Bus client can be introduced without shelling out to print the PAT or passing the secret through process arguments, environment variables, configuration files, logs, or MCP outputs.
-5. **Build a reduced first-release catalog.** Demonstrate that every out-of-scope operation is denied by the server on all public tool surfaces, including raw REST, GraphQL, CLI/skill routes, and alternate transports.
-6. **Check exact GitLab 18.8 compatibility.** Run safe API compatibility tests against a disposable target test project only after SEC-002 is accepted and a PAT is safely provisioned.
-7. **Review project governance and supply chain.** Check supported release line, dependency licenses and vulnerabilities, CI/test coverage, signed artifacts, maintainer concentration, response to security reports, and an upstream update/patch strategy.
-
-## 8. Current recommendation
+## 7. Current recommendation
 
 Do not adopt either implementation unchanged.
 
-Keep **zereight/gitlab-mcp as the first candidate for deeper project-scope review**, because its fixed project allowlist is closer to the accepted boundary than what has been identified in the Go candidate. Keep **jmrplens/gitlab-mcp-server as a serious challenger**, especially if Go is accepted under ADR-0004, but its project-authorization gap must be addressed first.
+Keep **zereight/gitlab-mcp as the first fork-and-harden candidate** because it already has an explicit allowlist, strict scope mode, download-scope binding, and project-boundary regression tests. Start from a supported patched snapshot (at least v2.3.25 for the reviewed security fixes) and pin an exact source commit. Disable/remove the Raw API tool, remove or deny MR approval mutations, implement the independent approval gate and default-branch guard, and integrate Secret Service. This path requires reconsidering the Proposed Go language ADR.
 
-This is a provisional research priority, not an architecture decision. DES-012 should end with one of: fork and harden a candidate; build a small policy-enforcing wrapper only if it cannot be bypassed; or keep the current custom design. A wrapper that merely filters tool names is not sufficient when the underlying server exposes unguarded raw API routes.
+Keep **jmrplens/gitlab-mcp-server as the Go alternative**. It is attractive if Go is the overriding language decision, but a canonical project authorization layer is a prerequisite, not an optional hardening detail. The confirmation bypass and approval mutation surfaces must also be changed.
+
+A narrow wrapper that merely filters tool names is not sufficient for either candidate. If a policy boundary can be bypassed through a raw REST/GraphQL route, another tool surface, a nested resource, or a target-project parameter, the wrapper is not a security boundary.
+
+This is a source-review priority only, not a product selection or ADR. The final recommendation remains conditional on a complete route-by-route authorization audit and target GitLab 18.8.4-ee validation.
+
+## 8. Remaining DES-012 work
+
+1. Complete route inventory for Zereight: all project-scoped reads/writes, nested IDs, cross-project parameters, aliases, branch writes, redirect/download routes, and every alternate tool/CLI surface. Verify denied tools cannot be called directly.
+2. Complete route inventory for JMRPlens if retained as a Go challenger; identify every action route that requires project authorization and every global/group/GraphQL surface.
+3. Define the exact hardened design for a model-independent, server-enforced approval flow. It must bind a one-time approval to canonical project ID, MR IID, current source HEAD SHA, merge options, and operation; it must be unusable for any other call or after state changes.
+4. Define a server-side branch policy that rejects writes to default/protected branches regardless of GitLab configuration.
+5. Design direct Secret Service D-Bus token retrieval for the selected candidate; do not use an environment, argument, plaintext-file, or chat fallback.
+6. Test the exact required API operations against GitLab Self-Managed EE v18.8.4-ee with the Free subscription. This remains blocked until SEC-002 is accepted, the non-secret canary passes, a real PAT is securely provisioned, and the tests are explicitly authorized.
+7. Review the upstream release contents, dependency graph, security advisories, signed artifacts/provenance, maintenance policy, and update strategy for the exact fork point.
+
+DES-012 remains OPEN until the outstanding technical checks are completed and the user accepts a final adopt/fork/build recommendation.
 
 No upstream repository is to be cloned into this project, no dependency is to be added, no source code is to be modified, and no PAT is to be created as part of DES-012.
