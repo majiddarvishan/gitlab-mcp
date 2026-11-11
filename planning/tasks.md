@@ -978,7 +978,7 @@ No implementation task is authorized by this backlog. Implementation remains blo
 ## DES-012 — Evaluate existing GitLab MCP implementations
 
 - **Priority:** P0
-- **Status:** OPEN
+- **Status:** OPEN (current-main source audit recorded; target-instance validation and final design decision pending)
 - **Depends on:** DES-001 (DONE), user authorization to evaluate existing products (received)
 - **Reference:** [Existing GitLab MCP implementation evaluation](../docs/research/existing-gitlab-mcp-evaluation.md)
 - **Decision status:** No upstream project has been selected, forked, adopted, or authorized for code changes.
@@ -994,6 +994,13 @@ No implementation task is authorized by this backlog. Implementation remains blo
 - Assess whether the selected implementation can retrieve the PAT directly from Linux Secret Service in the same desktop D-Bus session without passing it through environment variables, process arguments, plaintext files, logs, or model-visible content.
 - Compare Go/TypeScript ecosystem fit, project size and capability surface, dependency and supply-chain posture, test quality, maintenance cadence, license, upgrade strategy, and the cost/risk of hardening.
 - Produce a recommendation: adopt upstream unchanged, fork and harden, build a narrow adapter around it, or retain a small custom implementation.
+
+**Progress recorded (2026-11-12)**
+- Source snapshots reviewed: Zereight main `b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9` and JMRPlens main `257c58f0b376983d98d177ce10f45c6f011ef92b`.
+- Zereight is the first candidate for deeper fork/hardening review because it provides an explicit project allowlist and regression tests for target-project/nested-resource checks. Its Raw API tool must be removed, and its `_confirmed` argument is not independent user approval.
+- JMRPlens is the Go alternative, but no fixed project allowlist was identified in its server configuration. Its model-controlled `confirm`/YOLO paths and MR approval mutation actions must be redesigned/removed.
+- Neither candidate has direct Linux Secret Service D-Bus credential retrieval. Exact GitLab 18.8.4-ee Free target validation remains pending.
+- No upstream project has been selected, forked, adopted, or authorized for code changes.
 
 **Acceptance criteria**
 - Each candidate has a pinned source snapshot and a documented feature/security assessment.
