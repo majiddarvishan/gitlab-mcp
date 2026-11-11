@@ -12,7 +12,7 @@ GitLab MCP products exist, including an official GitLab server and independent o
 
 The current findings favor **zereight/gitlab-mcp as the first fork-and-harden candidate**. Its built-in project allowlist, strict-scope mode, download-token project binding, and regression tests are closer to our required project boundary. The latest 2.x release also records fixes for past cross-project scope defects. Important gaps remain: model-generated confirmation, approval/unapproval tools, a Raw REST escape hatch that does not inspect project IDs in body/query parameters, no mandatory default-branch write guard, and no direct Secret Service integration.
 
-**jmrplens/gitlab-mcp-server remains a serious alternative if Go is selected**, and has a more extensive documented assurance case. However, the reviewed configuration has no fixed MCP project allowlist; per-action `project_id` parameters are not an authorization boundary. It also permits a model-supplied `confirm: true` to bypass the destructive-action prompt, has a YOLO bypass setting, exposes MR approval mutations, and does not integrate Linux Secret Service.
+**jmrplens/gitlab-mcp-server remains a serious alternative if Go is selected**, and has a more extensive documented assurance case. It also already implements MCP Elicitation and the newer multi-round-trip flow supported by Codex. Its signed request state is bound to the tool call and principal, but it can be replayed for the same call until expiry; the current prompt is also too generic to show the exact MR identity and merge parameters. The reviewed configuration has no fixed MCP project allowlist; per-action `project_id` parameters are not an authorization boundary. It permits a model-supplied `confirm: true` to bypass Elicitation, has a YOLO bypass setting, exposes MR approval mutations, and does not integrate Linux Secret Service.
 
 The most important project rule is unchanged: an MCP tool argument such as `confirm=true` or `_confirmed=true` is not user approval. The server must receive and verify a separate approval that the model cannot invent, and that approval must be bound to the exact operation and consumed once.
 
@@ -118,7 +118,18 @@ Primary pinned sources:
 - [MR approval actions](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/internal/tools/mrapprovals/action_specs.go)
 - [Assurance case](https://github.com/jmrplens/gitlab-mcp-server/blob/257c58f0b376983d98d177ce10f45c6f011ef92b/site/src/content/docs/operations/assurance-case.mdx)
 
-### 5.2 Project-scope controls
+### 5.2 Existing Elicitation implementation
+
+The repository already implements a direct user-interaction mechanism through MCP Elicitation:
+
+- Legacy MCP sessions use a synchronous server-initiated Elicitation request.
+- Sessions using protocol `2026-07-28` or later use multi-round-trip elicitation (MRTR), returning `inputRequests` and a signed `RequestState` that is echoed on retry.
+- The request state is HMAC-protected, bound to a digest of the tool name plus canonical arguments, bound to the caller principal where the server has one, and expires after 10 minutes.
+- OpenAI's current Codex App Server documentation exposes `mcpServer/elicitation/request`; the ChatGPT desktop app, Codex CLI, and IDE extension share the same Codex MCP host/configuration. This makes Elicitation a plausible interaction layer for the planned local deployment. See [Elicitation feasibility](#7-elicitation-feasibility-with-chatgpt-desktop-and-codex).
+
+This is a useful foundation, but it is not yet the project's approval system. The existing `confirm: true` and YOLO bypasses remain, RequestState is reusable for the same call until expiry rather than single-use, and the current destructive-action prompt identifies the tool/action but not the exact MR, HEAD SHA, or merge options.
+
+### 5.3 Project-scope controls
 
 The reviewed `Config` supports GitLab URL/token, tier, tool surface, read-only/safe modes, tool exclusion by name, and other server settings. The inspected configuration does **not** define a fixed project-ID allowlist or project-scope policy. `ExcludeTools` is a tool-name filter, not a project authorization boundary.
 
@@ -126,9 +137,15 @@ Project-scoped actions require a `project_id` parameter, but a parameter is only
 
 The catalog includes global and group-wide operations such as global MR listing; excluding a few global tools would still not restrict ordinary project-scoped actions to the allowlist.
 
-### 5.3 Blocking security gaps
+### 5.4 Blocking security gaps
 
-**Model-controlled confirmation.** `ConfirmDestructiveAction` first checks `GITLAB_MCP_YOLO_MODE` / `AUTOPILOT`, then accepts `confirm: true` from the tool arguments, and only otherwise attempts MCP elicitation. Elicitation can present a real prompt when the client supports it, but the model-supplied boolean bypasses that prompt. The project's assurance case explicitly recognizes that the model can write the confirmation argument. Therefore the current behavior is not a mandatory independent user approval. A hardened fork would have to remove the boolean bypass, reject YOLO for the merge path, and bind a direct user response to the exact MR/project/head SHA/merge parameters for one execution.
+**Model-controlled confirmation.** `ConfirmDestructiveAction` first checks `GITLAB_MCP_YOLO_MODE` / `AUTOPILOT`, then accepts `confirm: true` from the tool arguments, and only otherwise attempts MCP Elicitation. Elicitation can present a real prompt when the client supports it, but the model-supplied boolean bypasses that prompt. The project's assurance case explicitly recognizes that the model can write the confirmation argument. Therefore the current behavior is not a mandatory independent user approval. A hardened fork must remove the boolean bypass, reject YOLO for protected writes, and make server-issued Elicitation a required gate rather than an optional path.
+
+**RequestState is bound but not single-use.** `internal/elicitation/flow.go` and `internal/elicitation/state.go` bind an accepted response to the tool name, canonicalized arguments, principal, and a 10-minute expiry. The state is signed, but `decodeState` returns the accepted answer again whenever the same call presents the same valid state before expiry. The repository's `state_test.go` explicitly verifies that an accepted answer is still returned to the same call one minute later. No server-side consumed-nonce/one-time registry was identified. This fails the project's one-use approval requirement.
+
+**The current confirmation prompt does not show the exact Merge.** The individual surface prompts with the tool name; the meta surface prompts with the tool and action names. Neither adds the canonical project ID, MR IID, current source HEAD SHA, target branch, or merge options. A hardened Merge confirmation must show these exact values, bind the user's response to them, and re-read the MR/approval state immediately before consuming the approval and sending the merge.
+
+**The existing gate is destructive-only.** The shared confirmation wrapper is invoked for actions classified as destructive. Ordinary create/update actions do not all pass through this gate, whereas this project requires explicit approval for every state-changing operation. The fork must apply the approval check to all mutation routes, with additional human GitLab approval preconditions for Merge.
 
 **MR approval mutations.** The action catalog registers `merge_request.approve` and `merge_request.unapprove`. The approval package also registers approval-reset behavior. The first two can perform review approval mutations with the calling user's identity, contrary to ADR-0011. These operations must be removed or denied by the server, not merely hidden.
 
@@ -138,11 +155,11 @@ The catalog includes global and group-wide operations such as global MR listing;
 
 **Large surface.** The action catalog contains many domains beyond this project's first-release scope. A restrictive catalog and server-side deny-by-default policy would be required across dynamic, meta, and individual surfaces. Tool-name filtering alone is not enough if a route remains executable through another surface.
 
-### 5.4 Useful Free-tier approval read path
+### 5.5 Useful Free-tier approval read path
 
 The source distinguishes Premium/Ultimate per-MR approval-state/rules actions from the basic approval configuration endpoint. `merge_request.approval_config` is documented as available on all tiers and reads the MR approvals data; the Premium/Ultimate approval-state endpoints are marked as such. This gives a possible starting point for reading `approved_by` on the target EE Free tier, but it does not implement our reviewer identity protocol. The server would still need to resolve each approver using the target-instance Users API checks in SEC-009 and fail closed on any ambiguous/incomplete identity.
 
-### 5.5 Preliminary fit
+### 5.6 Preliminary fit
 
 **Best language fit if Go is retained**, with a detailed assurance case, extensive automated tests, and a single-binary distribution. However, adding a complete project-authorization layer, a mandatory exact-operation approval system, human-only MR review restrictions, branch protection policy, and Secret Service provider is substantial security engineering. The project currently has no proven project allowlist, so it is not the nearer drop-in candidate.
 
@@ -156,25 +173,44 @@ The source distinguishes Premium/Ultimate per-MR approval-state/rules actions fr
 | Cross-project parameter checks | Not established | Several known cases have regression tests; full audit pending | No central allowlist to enforce |
 | Raw REST escape hatch | Not assessed for target | Explicit opt-in; body/query project fields are not checked; must be removed | No fixed project boundary to protect |
 | Generic GraphQL path under project scope | Not established | Blocked when project scope is enabled | Must be covered by new central project authorization |
-| Exact server-side user approval | Not established | No; `_confirmed` is model input | No; `confirm` is model input and YOLO bypass exists |
+| Independent user-interaction channel | Not established | No Elicitation gate identified; `_confirmed` is model input | Direct MCP Elicitation exists and Codex-host support is documented; current bypass, generic prompt, replayable state and destructive-only coverage prevent compliance |
 | Human-only MR approval | Not established | Approve/unapprove tools exist; must be removed/denied | Approve/unapprove/reset actions exist; must be removed/denied |
 | Direct Secret Service | Not established | No; env/CLI/file token inputs | No; env token input |
 | Go ecosystem | N/A | No; TypeScript/Node.js | Yes |
 | Main adoption blocker | Target Free availability | Approval gate, raw API, branch gate, Secret Service | Project allowlist, approval gate, review controls, Secret Service |
 
-## 7. Current recommendation
+## 7. Elicitation feasibility with ChatGPT Desktop and Codex
+
+OpenAI's current Codex App Server documentation lists `mcpServer/elicitation/request` as a server request. The request carries a form or URL elicitation, and the client responds with `accept`, `decline`, or `cancel`. OpenAI's MCP connection guide states that ChatGPT desktop, Codex CLI, and the IDE extension share the same Codex MCP host and configuration. This makes MCP Elicitation a viable user-interaction candidate for our planned local STDIO setup.
+
+Sources:
+- [Codex App Server — MCP server elicitation requests](https://learn.chatgpt.com/docs/app-server)
+- [ChatGPT Learn — supported MCP hosts and shared desktop/Codex configuration](https://learn.chatgpt.com/docs/extend/mcp)
+- [OpenAI developer guidance — annotations do not replace server authorization or confirmation](https://developers.openai.com/plugins/build/mcp-server)
+
+Design implications:
+1. Treat Elicitation as the user-facing interaction channel, not as the authorization store. The server must fail closed if the client does not advertise support, does not return a valid accepted response, or cannot complete the request. Never fall back to `confirm=true`, `_confirmed=true`, YOLO, or a model instruction to retry.
+2. Require approval on **every mutation**, not just destructive operations. Merge additionally requires the independent GitLab human approval from ADR-0014.
+3. The Merge confirmation must display and bind the exact canonical project ID, MR IID, current source HEAD SHA, target branch, and all merge options that affect the result.
+4. The approval must be atomically consumed once on the server. The JMRPlens MRTR RequestState is HMAC-signed, call/principal-bound, and expires in 10 minutes, but the current state remains reusable for the same call until expiry. A separate consumed-nonce or pending-approval registry is needed.
+5. Immediately before Merge, re-read the MR, verify that its HEAD SHA still matches the approved SHA, and re-check the independent human GitLab approval. Any change invalidates the approval and requires a new Elicitation.
+6. Actual behavior on the user's installed ChatGPT Desktop and Codex versions remains a TST-009 workstation test. Published protocol support is not a substitute for testing the exact local host UX and fail-closed behavior.
+
+**Effect on candidate comparison:** JMRPlens has a meaningful advantage in existing Elicitation plumbing; Zereight has the stronger existing project-scope baseline. Neither currently implements the complete approval policy required by this project.
+
+## 8. Current recommendation
 
 Do not adopt either implementation unchanged.
 
 Keep **zereight/gitlab-mcp as the first fork-and-harden candidate** because it already has an explicit allowlist, strict scope mode, download-scope binding, and project-boundary regression tests. Start from a supported patched snapshot (at least v2.3.25 for the reviewed security fixes) and pin an exact source commit. Disable/remove the Raw API tool, remove or deny MR approval mutations, implement the independent approval gate and default-branch guard, and integrate Secret Service. This path requires reconsidering the Proposed Go language ADR.
 
-Keep **jmrplens/gitlab-mcp-server as the Go alternative**. It is attractive if Go is the overriding language decision, but a canonical project authorization layer is a prerequisite, not an optional hardening detail. The confirmation bypass and approval mutation surfaces must also be changed.
+Keep **jmrplens/gitlab-mcp-server as the Go alternative**. It has a useful Elicitation implementation that may reduce the amount of client-interaction plumbing, but the current flow is not one-use and does not show an exact Merge summary. A canonical project authorization layer remains a prerequisite, and the confirmation bypass, destructive-only coverage, and approval mutation surfaces must also be changed.
 
 A narrow wrapper that merely filters tool names is not sufficient for either candidate. If a policy boundary can be bypassed through a raw REST/GraphQL route, another tool surface, a nested resource, or a target-project parameter, the wrapper is not a security boundary.
 
 This is a source-review priority only, not a product selection or ADR. The final recommendation remains conditional on a complete route-by-route authorization audit and target GitLab 18.8.4-ee validation.
 
-## 8. Remaining DES-012 work
+## 9. Remaining DES-012 work
 
 1. Complete route inventory for Zereight: all project-scoped reads/writes, nested IDs, cross-project parameters, aliases, branch writes, redirect/download routes, and every alternate tool/CLI surface. Verify denied tools cannot be called directly.
 2. Complete route inventory for JMRPlens if retained as a Go challenger; identify every action route that requires project authorization and every global/group/GraphQL surface.
