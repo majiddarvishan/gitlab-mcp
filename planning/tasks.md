@@ -998,7 +998,8 @@ No implementation task is authorized by this backlog. Implementation remains blo
 **Progress recorded (2026-11-12)**
 - Source snapshots reviewed: Zereight main `b525d1e8b2c156f4c2af1d56b0e5656da56bdcd9` and JMRPlens main `257c58f0b376983d98d177ce10f45c6f011ef92b`.
 - Zereight is the first candidate for deeper fork/hardening review because it provides an explicit project allowlist and regression tests for target-project/nested-resource checks. Its Raw API tool must be removed, and its `_confirmed` argument is not independent user approval.
-- JMRPlens is the Go alternative, but no fixed project allowlist was identified in its server configuration. Its model-controlled `confirm`/YOLO paths and MR approval mutation actions must be redesigned/removed.
+- JMRPlens is the Go alternative and has direct MCP Elicitation plus signed, request/principal-bound multi-round-trip state. However, its `RequestState` is reusable for the same call until its 10-minute expiry; the current prompt omits MR identity/head SHA; `confirm=true` and YOLO bypass Elicitation; and its existing confirmation wrapper covers destructive rather than every write operation. A server-side, atomic, single-use approval gate is still required.
+- OpenAI documentation lists Codex App Server support for `mcpServer/elicitation/request`, and ChatGPT desktop shares the Codex MCP host/configuration. A local TST-009 smoke test must still verify the installed clients and fail-closed behavior.
 - Neither candidate has direct Linux Secret Service D-Bus credential retrieval. Exact GitLab 18.8.4-ee Free target validation remains pending.
 - No upstream project has been selected, forked, adopted, or authorized for code changes.
 
